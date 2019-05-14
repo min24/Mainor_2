@@ -1,0 +1,17 @@
+## Scatter plot
+```{r}
+ggplot()+
+  geom_point(data = mpg, aes(x = displ,y = cty, shape = drv))+
+  xlab("Объем двигателя")+
+  ylab("Каличество миль на калон")+
+  ggtitle("Распределение количество миль на галон\nдля автомобилей с разным объемом двигателя") +
+  scale_fill_brewer(name = "Тип\nпривода", palette = "Set3")+
+  theme_bw()
+```
+
+```{r}
+ggplot(data = mpg)+
+  geom_point(x = mpg$displ, y = mpg$cty)+
+  theme_minimal(~class)
+```
+

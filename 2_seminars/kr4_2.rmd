@@ -1,0 +1,85 @@
+
+```{r}
+library(igraph) 
+dolphins1 <- read.graph("~/shared/minor2_2018/data/dolphins.gml", format=c("gml")) 
+dolphins <- simplify(dolphins)
+V(dolphins)$name = 1:62
+V(dolphins)$name
+```
+
+```{r}
+E(dolphins)
+```
+
+```{r}
+vcount(dolphins)
+
+ecount(dolphins)
+
+degree(dolphins)
+```
+```{r}
+dolphins %>% filter(degree(dolphins) == 0)
+```
+
+```{r}
+x = betweenness(dolphins)
+
+sort(x, decreasing = T)
+```
+
+```{r}
+ebcommune <- edge.betweenness.community(dolphins)
+ebcommune
+membership(ebcommune) ## assigning nodes to communities
+table(membership(ebcommune))
+modularity(ebcommune)
+plot(ebcommune, dolphins, vertex.size = 40, 
+     xlab = "graph с отображением на кластер edge betweenness")
+```
+
+```{r}
+attr_dolphin <- read.csv("~/shared/minor2_2018/data/attr_dolphin.csv")
+attr_sex = ifelse(V(dolphins)$name %in% attr_dolphin$id, attr_dolphin$sex, -1)
+V(dolphins)$sex = attr_sex
+assortativity(dolphins, V(dolphins)$sex, directed = F)
+assortativity = assortativity(dolphins, V(dolphins)$sex, directed = F)
+
+```
+
+```{r}
+attr_age = ifelse(V(dolphins)$name %in% attr_dolphin$id, attr_dolphin$age, -1)
+
+V(dolphins)$age = attr_age
+assortativity(dolphins, V(dolphins)$age, directed = F)
+
+```
+
+
+```{r}
+g = dolphins
+number_of_permutations = 1500
+assortativity_shuffled  <- rep(NA, number_of_permutations)
+for(i in 1:number_of_permutations){
+  V(g)$attr_shuffled = sample(V(g)$sex, replace = F)
+  assortativity_shuffled[i] = assortativity_nominal(g,as.factor(V(g)$attr_shuffled))
+}
+q <- quantile(assortativity_shuffled, c(0.05, 0.95))
+q
+assortativity_real = assortativity(g, V(g)$sex, directed = F)
+assortativity_real
+pvalue = sum(abs(assortativity_shuffled) >= abs(assortativity_real)) / number_of_permutations
+pvalue
+```
+
+```{r}
+library(ggplot2)
+df <- data.frame(assortativity_shuffled = assortativity_shuffled) 
+ggplot(df) +
+  geom_histogram(aes(assortativity_shuffled), fill="blue") + 
+  geom_vline(xintercept=assortativity_real, color="black")+ 
+  geom_vline(xintercept=q[1], color="red") +
+  geom_vline(xintercept=q[2], color="red") + theme_bw()
+```
+
+

@@ -1,0 +1,139 @@
+---
+title: "Recommendation System - creating own function"
+author: "Alena Suvorova"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+```
+
+Для того, чтобы получить рекоммендацию для нескольких пользователей, нам приходилось повторять одну и ту же последовательность команд. Для решения шаблонных задач, хорошей практикой является написание своих функций, вызов которой мог бы заменить структуру из большого количества строк кода.
+
+# Вспомним, как писать свои функции
+
+Здесь function() используется, чтобы создавать функции! Далее в круглых скобках подаются названия аргументов, а «тело» функции записывается в {} и показывает где и как в коде должны использоваться эти аргументы.
+
+```{r}
+g <- function(x) {
+  return(x+1)
+}
+
+g(1)
+
+g(c(1,2,3))
+```
+
+Когда мы создаем функции, мы можем сохранять промежуточные переменные, внутри тела функции. Эти переменные не будут сохраняться в наше окружение и существуют только на момент исполнения кода. Это называется "локальное окружение" функции. А окружение, с которым мы обычно работаем и где хранятся переменные доступные всегда, называется "глобальным окружением" (его мы с Вами видим в RStudio справа-сверху).
+
+```{r}
+that_i_love = function(x){
+  interests = str_c(x)
+  str_c("Hi, I love ", interests)
+}
+
+that_i_love("R and naps")
+
+interests
+```
+
+При вызове функции вы можете указать аргументы по порядку и по их полному имени. Сначала сопоставляются аргументы для которых указано полное имя, затем R смотрит на порядок аргументов для которых не указаны имена.
+
+Ниже мы задаем функцию, у которой есть три аргумента, и ее назначение это просто вывести то, что пользователь задает в аргументы. Также даны примеры использования.
+
+```{r}
+f <- function(abcdef, bcde1, bcde2) {
+  print(abcdef)
+  print(bcde1)
+  print(bcde2)
+}
+
+f(1, 2, 3)
+f(abcdef = 1, bcde1 = 2, bcde2 = 3)
+
+f(abcdef = 1, 2, 3)
+f(1, abcdef = 2, 3) 
+# сначала функция подцепляет аргумент abcdef по имени, а остальные распределяет в порядке появления в вызове функции. 
+```
+
+Также в функции можно задавать аргументы «по-умолчанию». Рассмотрим, как действуют такие аргументы на примере с возведением в степень. Пусть по умолчанию функция calculate_power(n) будет возводить число n в степень 2.
+
+```{r}
+calculate_power <- function(n, y = 2){
+  n^y  
+}
+
+calculate_power(2, 10)
+calculate_power(3)
+```
+
+# А теперь еще раз посмотрим, как у нас происходит получение рекоммендации
+
+Мы хотим получать рекомендацию для любого пользователя, не переписывая каждый раз код. 
+Сначала выделим повторяющуюся последовательность действий
+
+```{r}
+userId = 111343
+
+user = ratings %>% filter(customer_id == userId & rating == 5)
+mostSimilar = head(sort(sim[,as.character(user$movie_id)], decreasing = T), n = 5)
+a = which(sim[,as.character(user$movie_id)] %in% mostSimilar, arr.ind = TRUE)
+rows = a %% dim(sim)[1]
+result = rownames(sim)[rows]
+filter(movies,movie_id %in% result) %>% dplyr::select(title)
+```
+
+И преобразуем в функцию, в которой будет приниматься id пользователя для получения рекоммендаций. 
+
+```{r}
+
+getFilms = function(userId, nfilm = 5){
+  user = ratings %>% filter(customer_id == userId & rating == 5)
+  
+  if (nrow(user)==0) {
+    recommend = "The Lord of The Ring"
+  } else {
+    mostSimilar = head(sort(sim[,as.character(user$movie_id)], decreasing = T), n = nfilm)
+    a = which(sim[,as.character(user$movie_id)] %in% mostSimilar, arr.ind = TRUE)
+    rows = a %% dim(sim)[1]
+    result = rownames(sim)[rows]
+    recommend = filter(movies,movie_id %in% result) %>% dplyr::select(title)
+  }
+  
+  recommend
+}
+
+getFilms(111343, nfilm = 7)
+
+getFilms(2413408)
+
+```
+
+А что если человек не поставил ни одной пятерки?
+
+```{r}
+getFilms = function(userId){
+  user = ratings %>% filter(customer_id == userId & rating == 5)
+  
+  if (nrow(user)==0) {
+    recommend = "The Lord of The Ring"
+  } else {
+    mostSimilar = head(sort(sim[,as.character(user$movie_id)], decreasing = T), n = 5)
+    a = which(sim[,as.character(user$movie_id)] %in% mostSimilar, arr.ind = TRUE)
+    rows = a %% dim(sim)[1]
+    result = rownames(sim)[rows]
+    recommend = filter(movies,movie_id %in% result) %>% dplyr::select(title)
+  }
+  
+  recommend
+}
+
+```
+
+ **Ваша очередь**: 
+ 1. Преобразуйте функцию так, чтобы число рекомендованных фильмов тоже задавал пользователь
+```{r}
+
+```
+ 
+ 2. Напишите функцию, на вход которой подается название фильма (из имеющихся в базе), а рекомендуются N наиболее на него похожих.

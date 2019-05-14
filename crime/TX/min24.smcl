@@ -1,0 +1,283 @@
+{smcl}
+{txt}{sf}{ul off}{.-}
+      name:  {res}<unnamed>
+       {txt}log:  {res}C:\Users\Duy\Desktop\Mainor_2\crime\TX\min24.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}25 Apr 2019, 05:38:33
+
+{com}. use data_age.csv
+{err}{p 0 4 2}
+file data_age.csv
+not Stata format
+{p_end}
+{txt}{search r(610), local:r(610);}
+
+{com}. {err}stacktrace not available
+stacktrace not available
+{com}import delimited using data_age
+{res}{err}stacktrace not available
+{txt}{search r(5100), local:r(5100);}
+
+{com}. ls
+{txt}  <dir>   4/25/19  5:38  {res}.                 
+{txt}  <dir>   4/25/19  5:38  {res}..                
+{txt}  11.3M   4/24/19 19:11  {res}.RData            
+{txt}   5.3k   4/25/19  4:29  {res}.Rhistory         
+{txt} 682.3k   4/25/19  5:30  {res}data_age.csv      
+{txt}   0.2k   4/25/19  5:38  {res}min24.smcl        
+{txt}5826.6k   4/23/19  8:38  {res}NIBRS_ARRESTEE.csv
+{txt}  20.5M   4/23/19  8:39  {res}NIBRS_incident.csv
+{txt}  12.6M   4/23/19  8:39  {res}NIBRS_OFFENDER.csv
+{txt}  10.8M   4/23/19  8:39  {res}NIBRS_OFFENSE.csv 
+{txt}  14.5M   4/23/19  8:39  {res}NIBRS_VICTIM.csv  
+{txt}8014.2k   4/23/19  8:40  {res}NIBRS_VICTIM_OFFENSE.csv
+{txt}6455.0k   4/25/19  5:28  {res}tx2017.csv        
+{txt}   2.6k   4/24/19 19:11  {res}tx2017.rmd        
+
+{com}. use data_age.csv
+{err}{p 0 4 2}
+file data_age.csv
+not Stata format
+{p_end}
+{txt}{search r(610), local:r(610);}
+
+{com}. import data_age.csv
+{err}import: unknown subcommand "data_age.csv"
+{txt}{search r(198), local:r(198);}
+
+{com}. {err}stacktrace not available
+{com}read in data_age.csv file
+{err}command {bf}read{sf} is unrecognized
+{txt}{search r(199), local:r(199);}
+
+{com}. insheet using "data_csv.csv", clear
+{err}{p 0 4 2}
+file data_csv.csv
+not found
+{p_end}
+{txt}{search r(601), local:r(601);}
+
+{com}. insheet using "data_age.csv", clear
+{txt}(2 vars, 100,097 obs)
+
+{com}. summarise
+{err}command {bf}summarise{sf} is unrecognized
+{txt}{search r(199), local:r(199);}
+
+{com}. mean(age_numx)
+{res}
+{txt}Mean estimation{col 35}Number of obs{col 51}= {res}   100,097
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 14}{hline 12}
+{col 14}{c |}       Mean{col 26}   Std. Err.{col 38}     [95% Con{col 51}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 14}{hline 12}
+{space 4}age_numx {c |}{col 14}{res}{space 2} 35.65402{col 26}{space 2} .0510965{col 37}{space 5} 35.55387{col 51}{space 3} 35.75416
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 14}{hline 12}
+
+{com}. sdtest(age_numx, age_numy)
+{err}invalid syntax
+{txt}{search r(198), local:r(198);}
+
+{com}. ttest age_numx, age_numy
+{err}option {bf:age_numy} not allowed
+{txt}{search r(198), local:r(198);}
+
+{com}. ttest age_numx, age_numy
+{err}option {bf:age_numy} not allowed
+{txt}{search r(198), local:r(198);}
+
+{com}. ttest age_numx, by(age_numy)
+{err}more than 2 groups found, only 2 allowed
+{txt}{search r(420), local:r(420);}
+
+{com}. mean(age_numy)
+{res}
+{txt}Mean estimation{col 35}Number of obs{col 51}= {res}   100,097
+
+{txt}{hline 13}{c TT}{hline 11}{hline 11}{hline 14}{hline 12}
+{col 14}{c |}       Mean{col 26}   Std. Err.{col 38}     [95% Con{col 51}f. Interval]
+{hline 13}{c +}{hline 11}{hline 11}{hline 14}{hline 12}
+{space 4}age_numy {c |}{col 14}{res}{space 2} 30.68274{col 26}{space 2}  .040874{col 37}{space 5} 30.60263{col 51}{space 3} 30.76285
+{txt}{hline 13}{c BT}{hline 11}{hline 11}{hline 14}{hline 12}
+
+{com}. ttest age_numx, by(age_numy)
+{err}more than 2 groups found, only 2 allowed
+{txt}{search r(420), local:r(420);}
+
+{com}. ttest AGE_NUMX, by(AGE_NUMY)
+{err}variable {bf}AGE_NUMX{sf} not found
+{txt}{search r(111), local:r(111);}
+
+{com}. insheet using "data_age.csv", clear
+{txt}(2 vars, 100,097 obs)
+
+{com}. ttest v1, by(v2)
+{err}more than 2 groups found, only 2 allowed
+{txt}{search r(420), local:r(420);}
+
+{com}. e(rss)
+{err}rss not found
+{txt}{search r(111), local:r(111);}
+
+{com}. anova
+{err}last estimates not found
+{txt}{search r(301), local:r(301);}
+
+{com}. correlate v1, v2
+{err}option {bf:v2} not allowed
+{txt}{search r(198), local:r(198);}
+
+{com}. correlate v1 v2, covariance
+{txt}(obs=100,097)
+
+             {c |}       v1       v2
+{hline 13}{c +}{hline 18}
+          v1 {c |}{res}  261.338
+          {txt}v2 {c |}{res}  63.2962   167.23
+
+
+{com}. correlate v1 v2
+{txt}(obs=100,097)
+
+             {c |}       v1       v2
+{hline 13}{c +}{hline 18}
+          v1 {c |}{res}   1.0000
+          {txt}v2 {c |}{res}   0.3028   1.0000
+
+
+{com}. anova v1 v2
+
+                         {txt}Number of obs = {res}   100,097    {txt}R-squared     ={res}  0.0962
+                         {txt}Root MSE      =   {res} 15.3757    {txt}Adj R-squared ={res}  0.0954
+
+                  {txt}Source {c |} Partial SS         df         MS        F    Prob>F
+              {hline 11}{c +}{hline 52}
+                   Model {c |} {res} 2517137.9         93   27065.999    114.49  0.0000
+                         {txt}{c |}
+                      v2 {c |} {res} 2517137.9         93   27065.999    114.49  0.0000
+                         {txt}{c |}
+                Residual {c |} {res}  23641792    100,003   236.41083  
+              {txt}{hline 11}{c +}{hline 52}
+                   Total {c |} {res}  26158930    100,096   261.33841  
+
+{com}. oneway v1, tabulate
+{err}too few variables specified
+{txt}{search r(102), local:r(102);}
+
+{com}. oneway v1 v2, tabulate
+
+            {txt}{c |}            Summary of v1
+         v2 {c |}        Mean   Std. Dev.       Freq.
+{hline 12}{c +}{hline 36}
+          1 {c |}  {res} 40.333333   15.243771          69
+  {txt}        2 {c |}  {res} 40.833333   22.220861           6
+  {txt}        3 {c |}  {res}      12.5   12.167808          10
+  {txt}        5 {c |}  {res}     25.25   23.692977           8
+  {txt}        6 {c |}  {res}   31.5625   24.168764          16
+  {txt}        7 {c |}  {res} 31.291667    20.91074          24
+  {txt}        8 {c |}  {res} 31.771429   22.014815          35
+  {txt}        9 {c |}  {res}     28.48   21.692171          75
+  {txt}       10 {c |}  {res} 26.671429   19.421579         210
+  {txt}       11 {c |}  {res} 25.229167    18.35425         480
+  {txt}       12 {c |}  {res} 24.800808   17.284075         743
+  {txt}       13 {c |}  {res} 28.249415   17.796479       1,283
+  {txt}       14 {c |}  {res} 29.603945   16.856787       1,977
+  {txt}       15 {c |}  {res} 30.726244   16.691322       2,652
+  {txt}       16 {c |}  {res} 31.383773   16.129933       3,106
+  {txt}       17 {c |}  {res} 31.983095   16.485748       3,431
+  {txt}       18 {c |}  {res} 31.556815   16.226813       3,705
+  {txt}       19 {c |}  {res}  30.36458   15.271926       3,467
+  {txt}       20 {c |}  {res} 31.275235   15.366894       3,408
+  {txt}       21 {c |}  {res} 31.932521   15.363585       3,364
+  {txt}       22 {c |}  {res} 31.832144   14.779913       3,503
+  {txt}       23 {c |}  {res} 31.645716   14.612946       3,198
+  {txt}       24 {c |}  {res}  31.51575   14.553563       3,238
+  {txt}       25 {c |}  {res} 33.396792   14.748053       3,803
+  {txt}       26 {c |}  {res}  33.90953    14.52124       2,896
+  {txt}       27 {c |}  {res} 34.334107    14.64625       3,448
+  {txt}       28 {c |}  {res} 34.174143   14.071337       2,831
+  {txt}       29 {c |}  {res} 34.273547   13.431315       2,771
+  {txt}       30 {c |}  {res} 35.969245   14.352317       3,284
+  {txt}       31 {c |}  {res} 36.270073   14.799815       2,466
+  {txt}       32 {c |}  {res} 36.751989   14.598326       2,891
+  {txt}       33 {c |}  {res} 36.577239   14.791648       2,188
+  {txt}       34 {c |}  {res}  37.19252   14.581489       2,353
+  {txt}       35 {c |}  {res} 37.660268   15.240361       2,761
+  {txt}       36 {c |}  {res} 37.644444    14.69497       2,070
+  {txt}       37 {c |}  {res} 37.988569   14.309555       2,187
+  {txt}       38 {c |}  {res} 38.443417   14.993368       1,838
+  {txt}       39 {c |}  {res} 37.900552   14.444673       1,629
+  {txt}       40 {c |}  {res} 39.183991   14.424058       1,799
+  {txt}       41 {c |}  {res} 39.512482   14.599384       1,362
+  {txt}       42 {c |}  {res} 39.527298   15.196788       1,447
+  {txt}       43 {c |}  {res} 39.826468   15.705615       1,141
+  {txt}       44 {c |}  {res} 41.726016    14.95305       1,230
+  {txt}       45 {c |}  {res} 41.636219   15.287218       1,259
+  {txt}       46 {c |}  {res} 41.003419   15.785343       1,170
+  {txt}       47 {c |}  {res} 43.562447   15.754809       1,177
+  {txt}       48 {c |}  {res} 42.375252   15.022676         994
+  {txt}       49 {c |}  {res} 43.039773   15.033736         880
+  {txt}       50 {c |}  {res} 43.582982    15.94062       1,187
+  {txt}       51 {c |}  {res}  43.48289   15.275848         789
+  {txt}       52 {c |}  {res} 44.509583   16.217054         887
+  {txt}       53 {c |}  {res} 45.318563   15.290522         835
+  {txt}       54 {c |}  {res} 43.108725   16.520198         745
+  {txt}       55 {c |}  {res} 45.257062    17.09716         708
+  {txt}       56 {c |}  {res}     44.92   15.990689         550
+  {txt}       57 {c |}  {res}  45.52551   15.880442         588
+  {txt}       58 {c |}  {res} 43.916793   17.695934         661
+  {txt}       59 {c |}  {res} 46.325527   17.359344         427
+  {txt}       60 {c |}  {res} 46.669789    16.42485         427
+  {txt}       61 {c |}  {res} 48.601423   16.162275         281
+  {txt}       62 {c |}  {res} 45.455782   19.097105         294
+  {txt}       63 {c |}  {res} 49.134454   17.844345         238
+  {txt}       64 {c |}  {res} 46.655814   17.757259         215
+  {txt}       65 {c |}  {res} 49.790909   17.819796         220
+  {txt}       66 {c |}  {res} 47.776316    19.69711         152
+  {txt}       67 {c |}  {res}    46.952   17.870437         125
+  {txt}       68 {c |}  {res} 48.027273   17.901084         110
+  {txt}       69 {c |}  {res} 45.923077   22.069873         130
+  {txt}       70 {c |}  {res}  48.05814   19.783151          86
+  {txt}       71 {c |}  {res}  52.43662   19.439821          71
+  {txt}       72 {c |}  {res} 48.058824    21.07689          68
+  {txt}       73 {c |}  {res} 53.520833   22.191612          48
+  {txt}       74 {c |}  {res}        50   20.358551          52
+  {txt}       75 {c |}  {res}     52.25   18.516981          36
+  {txt}       76 {c |}  {res}        60   20.290744          22
+  {txt}       77 {c |}  {res} 51.717949   21.993957          39
+  {txt}       78 {c |}  {res} 49.259259   22.399507          27
+  {txt}       79 {c |}  {res} 60.676471   21.089593          34
+  {txt}       80 {c |}  {res} 68.416667    15.65641          24
+  {txt}       81 {c |}  {res} 60.809524    23.66774          21
+  {txt}       82 {c |}  {res} 52.166667   24.932029          12
+  {txt}       83 {c |}  {res} 55.272727   23.761696          11
+  {txt}       84 {c |}  {res} 58.933333   24.673487          15
+  {txt}       85 {c |}  {res}     64.75   29.936556          20
+  {txt}       86 {c |}  {res}     61.75   34.912987           4
+  {txt}       87 {c |}  {res} 64.428571   16.112698           7
+  {txt}       88 {c |}  {res}      46.5   25.184582          20
+  {txt}       89 {c |}  {res}        63    29.30529           6
+  {txt}       90 {c |}  {res}     64.25   22.425804           4
+  {txt}       91 {c |}  {res}        49   10.424331           4
+  {txt}       92 {c |}  {res}      70.8   30.833423           5
+  {txt}       93 {c |}  {res}        62   23.511699           6
+  {txt}       94 {c |}  {res}        94           0           2
+  {txt}       97 {c |}  {res}        21           0           1
+{txt}{hline 12}{c +}{hline 36}
+      Total {c |}  {res} 35.654016   16.165965     100,097
+
+                        {txt}Analysis of Variance
+    Source              SS         df      MS            F     Prob > F
+{hline 72}
+Between groups     {res} 2517137.93     93   27065.9992    114.49     0.0000
+{txt} Within groups     {res} 23641791.9 100003   236.410827
+{txt}{hline 72}
+    Total          {res} 26158929.9 100096   261.338414
+
+{txt}Bartlett's test for equal variances:  chi2({res}91{txt}) = {res} 1.1e+03{txt}  Prob>chi2 = {res}0.000
+
+{txt}note: Bartlett's test performed on cells with positive variance:
+      1 single-observation cells not used
+      1 multiple-observation cells not used
+
+{com}. 

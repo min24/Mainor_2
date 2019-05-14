@@ -1,0 +1,60 @@
+## Histogram
+```{r}
+class(mpg$cty)
+ggplot() +
+  geom_histogram(data = mpg, mapping = aes(x = cty), binwidth = 1, fill = "#00ff00", col = "#ff0000", alpha = 0.5)+
+  ggtitle("Распределение количество миль на один галон топлива\nв условиях города")+
+  xlab("Количество")+
+  ylab("Мили")+
+  geom_vline(aes(xintercept = mean(mpg$cty)), linetype = "dashed", size = 1, color = "#0000ff" )+
+  theme_bw()
+```
+```{r}
+ggplot()+
+  geom_histogram(data = mpg, aes(x = cty), fill = "#0000ff", binwidth = 5)+
+  xlab("Каличества миль на галон для авто\nразных классов")+
+  ylab("Частота")+
+  theme_minimal()+
+    facet_grid(~class)
+```
+## Exercises
+1. Добавьте к существующему графику линию медианы. (Функция median)
+```{r}
+ggplot() +
+  geom_histogram(data = mpg, aes(x = cty), binwidth = 1, fill="#008080", col="#483D8B", alpha = 0.5)  + 
+  ggtitle("Распределение количества миль на один галон топлива\nв условиях города") + 
+  xlab("Мили") + 
+  ylab("Количество") +
+  geom_vline(aes(xintercept = mean(mpg$cty)), linetype="dashed", color="#8B0000", size=1) +
+  theme_bw() +
+  #добавьте медиану
+  geom_vline(aes(xintercept = median(mpg$cty)), linetype="dashed", color="#888800", size = 1)
+```
+2. Постройте гистограмму по количеству миль на галон в условиях шоссе (переменная hwy)
+```{r}
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+ggplot()+  
+  geom_histogram(data = mpg, aes(x = hwy), binwidth = 1, fill="#008080", col="#483D8B", alpha = 0.5)  + 
+  xlab("Количество миль на галон")+
+  ylab("Частота")+
+  ggtitle("Количеству миль на галон в условиях шоссе")+
+  geom_vline(aes(xintercept = mean(mpg$hwy)), linetype="dashed", color="#8B0000", size=1) +
+  geom_vline(aes(xintercept = median(mpg$hwy)), linetype="dashed", color="#8B0000", size=1) +
+  geom_vline(aes(xintercept = Mode(mpg$hwy)), linetype="dashed", color="#8B0000", size=1) +
+  theme_bw()
+
+```
+
+```{r}
+ggplot()+
+  geom_histogram(data = mpg, aes(x = drv), fill = "#0000ff", binwidth = 5)+
+  xlab("Каличества миль на галон для авто\nразных классов")+
+  ylab("Частота")+
+  theme_minimal()+
+    facet_grid(~class)
+```
+
+

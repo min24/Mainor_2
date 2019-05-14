@@ -1,0 +1,46 @@
+##Recap:
+#1. lapply():
+apply function over list or vector
+output : list
+#2. sapply():
+apply function over list or vector
+try to simplify list to array
+#3: vapply():
+apply function over list or vector
+explicitly specify output format
+
+
+```{r}
+cities = c("New York", "Paris", "London", "Hongkong", "Moscow", "Berlin", "Hanoi")
+
+sapply(cities, nchar)
+
+vapply(cities, nchar, numeric(1))
+
+```
+```{r}
+first_and_last = function(name){
+  name = gsub(" ", "", name)
+  letters = strsplit(name, split = "")[[1]]
+  return(c(first = min(letters), last = max(letters)))
+  
+}
+
+
+sapply(cities, first_and_last)
+
+vapply(cities, first_and_last, character(1))
+vapply(cities, first_and_last, numeric(2))
+
+```
+
+```{r}
+unique_letters = function(name){
+  name = gsub(" ", "", name)
+  letters = strsplit(name, split = "")
+  unique(letters)
+}
+sapply(cities, unique_letters)
+vapply(cities, unique_letters, character(7))
+```
+

@@ -1,0 +1,60 @@
+```{r}
+# declare a function
+increment <- function(x, inc = 1) {
+  x <- x + inc
+  x
+}
+count <- 5
+a <- increment(count, 2)
+b <- increment(count)
+count <- increment(count, 2)
+a
+b
+# Note: Parameter "count" change every time the function is called
+
+```
+
+```{r}
+nyc = list(pop = 974613, boroughs = c("toi", "ten", "la", "duy"), capital = FALSE)
+lapply(nyc, class)
+```
+
+```{r}
+cities = c("New York", "Paris", "London", "Hongkong", "Moscow", "Berlin", "Hanoi")
+num_chars = c()
+for (i in 1:length(cities)) {
+  num_chars[i] = nchar(cities[i])
+}
+class(num_chars)
+# use loop "for" to compare with lapply
+```
+```{r}
+cities = c("New York", "Paris", "London", "Hongkong", "Moscow", "Berlin", "Hanoi")
+num_chars = lapply(cities, nchar)
+class(unlist(num_chars))
+# lapply always returns a list, use function "unlist" to get a vector
+```
+
+
+
+```{r}
+oil_prices = list(2.43, 1.23, 5.34, 6.32, 0.16, 7, 3, 2.56, 1, 9, 2)
+
+triple = function(x) {
+  3*x
+}
+
+result = lapply(oil_prices, triple)
+str(result)
+```
+
+
+```{r}
+multiply = function(x, factor) {
+  x*factor
+}
+
+times3 = lapply(oil_prices, multiply, factor = 4)
+unlist(times3)
+```
+

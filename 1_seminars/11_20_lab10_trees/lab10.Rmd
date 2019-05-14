@@ -1,0 +1,457 @@
+
+###### ДИКТАНТ!!!!111!!!
+https://docs.google.com/document/d/1wLNEBBsbYWbF-O5lUsPVSNHe7H31_dvyhx5OdjbIAsA/edit?usp=sharing
+
+- ничем пользоваться нельзя (сервак, вк и прочее - карается)!!!
+- пишем 10 минут
+
+## А теперь немного повторения
+
+Загружаем пакеты.
+```{r}
+library(readr)
+library(dplyr)
+library(ggplot2)
+```
+
+Загрузим данные. Про кредиты :)
+```{r}
+credits = read_csv("~/shared/minor2_2018/1-intro/lab10-trees/credit_data_v2.csv")
+```
+
+Сделаем простое правило -- даем кредиты только женатым людям с постоянной занятостью. 
+```{r}
+approval_condition = (credits$job == "fixed" & credits$marital == "married")
+credits$credit_approval = ifelse(approval_condition, "good", "bad")
+```
+
+Метрики "хорошести" модели:
+- точность (процент наблюдений, для которых предсказание оказалось верным, accuracy)
+- "чистота" разбиения (gini impuritiry)
+- loss/reward function
+
+### Точность
+```{r}
+# сгенерируем дополнительные наблюдения -- сбалансируем выборку. сделаем так, чтобы количество предсказываемых классов (вернет или не вернет кредит) было одинаковым 
+table(credits$status)
+3197 - 1249 # осталось добавить 1948 людей, которые не выплачивают кредит
+
+set.seed(1234) # отвечает за генератор
+no_pay = credits %>% 
+  filter(status == "bad") %>% 
+  sample_n(size = 1948, replace = T)
+
+balanced = rbind(credits, no_pay)
+
+table(balanced$status, balanced$credit_approval)
+(2187+1673) / 6394
+```
+```{r}
+
+```
+
+Стремимся к точности == 100% 
+
+### "Чистота"
+```{r}
+source("~/shared/minor2_2018/1-intro/lab09-ratings+gini/compute_gini.R")
+
+gini_split(data = balanced, real = status, predicted = credit_approval)
+gini_split(data = credits, real = status, predicted = credit_approval)
+
+``` 
+Коэфициент Джини равный 0 -- идеальное предсказание, 0.5 -- худшее предсказание.  
+
+### Reward/Loss Function
+```{r}
+credits$profit = ifelse(credits$status == "good", 
+                        credits$amount*0.15, 
+                        credits$amount*-1)
+
+credits %>% 
+  filter(credit_approval == "good") %>%
+  summarise(profit = mean(profit))
+```
+
+Переход от строгих правил к рейтинговой (скоринговой) системе. 
+```{r}
+credits$rating = 0
+credits$rating = ifelse(credits$marital == "married", credits$rating + 10, credits$rating)
+credits$rating = ifelse(credits$seniority > 3, credits$rating + 10, credits$rating)
+credits$rating = ifelse(credits$job == "freelance", credits$rating - 15, credits$rating)
+credits$rating = ifelse(credits$home == "owner", credits$rating + 15, credits$rating)
+
+# Ищем лучшее разбиение по рейтингу
+gini_find_split(data = credits, real = status, variable = rating)
+credits$credit_approval_rating = ifelse(credits$rating > 17.5, "good", "bad")
+# rebalance
+set.seed(1234)
+no_pay = credits %>% 
+  filter(status == "bad") %>% 
+  sample_n(size = 1948, replace = T)
+balanced = rbind(credits, no_pay)
+
+# accuracy
+table(balanced$status, balanced$credit_approval_rating)
+(2072 + 2047) / 6394 
+
+# gini impurity
+gini_split(data = balanced, real = status, predicted = credit_approval_rating)
+
+# loss/reward
+credits %>% 
+  filter(credit_approval_rating == "good") %>%
+  summarise(profit = sum(profit))
+```
+```{r}
+c = c(1,2,3,4,5,6,7)
+c = as.data.frame(c)
+sample_n(c, size = 10, replace = T)
+```
+
+## Самостоятельное задание 
+Из предложенных вариантов выберите наиболее интересный вам. Если будете успевать, можно попробовать несколько.
+
+1) Голосования в конгрессе США 1984 года. 
+Необходимо предсказать, как будут голосовать конгрессмены по вопросу введению безпошлинного экспорта (переменная *duty_free_exports*). У вас есть информация о том, как они проголосовали по 15 другим вопросам и их партийная принадлежность. Какую-то часть конгрессменов вы опросили лично по поводу того, как они собираются проголосовать. По этим данным составьте правила, которые потом можно было бы использовать для определения намерений оставшихся конгрессменов. 
+
+```{r}
+library(rpart)
+voting = read_csv("~/shared/minor2_2018/1-intro/lab10-trees/voting.csv")
+n = nrow(voting)
+
+set.seed(1)
+
+train = voting[1:round(0.7 * n),]
+test = voting[(round(0.7 * n) + 1):n,]
+tree = rpart(duty_free_exports ~ ., data = train, method="class" )
+
+pred = predict(tree, test, type="class")
+
+conf = table(test$duty_free_exports, pred)
+
+sum(diag(conf)/sum(conf))
+```
+
+
+```{r}
+voting = read_csv("~/shared/minor2_2018/1-intro/lab10-trees/voting.csv")
+x = names(voting)
+x = x[!x %in% c("party", "duty_free_exports")]
+n = length(x)
+y = rep(0, n)
+
+# scale of each column
+for (i in 1:n) {
+  colnames(voting)[colnames(voting)== x[i]] <- "k"
+  
+  conf = table(voting$k, voting$duty_free_exports)
+  acc = sum(diag(conf))/sum(conf)
+  if (acc < 0.5) {
+    y[i] = acc - 1
+  }else{
+    y[i] = acc
+  }
+  colnames(voting)[colnames(voting)== "k"] <- x[i]
+}
+#=========================================================================
+voting2 = read_csv("~/shared/minor2_2018/1-intro/lab10-trees/voting.csv")
+voting2[is.na(voting2)] = 0
+voting2$rating = 0
+
+for (i in 1:n) {
+  colnames(voting2)[colnames(voting2)== x[i]] = "k"
+  voting2$rating = voting2$rating + (voting2$k)*10*y[i]
+  colnames(voting2)[colnames(voting2)== "k"] = x[i]
+}
+
+source("~/shared/minor2_2018/1-intro/lab09-ratings+gini/compute_gini.R")
+gini_find_split(data = voting2, real = duty_free_exports, variable = rating)
+voting2$pred = ifelse(voting2$rating > 7.94314062062444, 1, 0)
+conf = table(voting2$duty_free_exports, voting2$pred)
+acc = sum(diag(conf))/sum(conf)
+acc
+conf
+# accuracy = 0.79
+```
+
+
+2) Отзывы на отели. 
+Мы работаем в сервисе для поиска отелей, на котором помимо прочего собираются отзывы гостей.
+Посчитана частота употребления определенных слов. Отзывы были вручную отмечены как положительные или отрицательные (переменная *rating*). Необходимо построить модель (= определить правила) для того, чтобы делить отзывы на положительные и отрицательные.
+
+
+```{r}
+reviews = read_csv("~/shared/minor2_2018/1-intro/lab10-trees/hotel_reviews.csv")
+library(stringr)
+
+a = paste(reviews['text'])
+a = paste(a, collapse = ' ')
+a = str_replace_all(a, '\n', ' ')
+a = str_replace_all(a, '\"', '')
+a = str_replace_all(a, ',', '')
+a = str_replace_all(a, '\\.', '')
+a = str_to_lower(a)
+b = str_split(a, " ")
+b = as.data.frame(b)
+colnames(b) = "text"
+b = b %>% group_by(text) %>% summarise(count = n()) %>% arrange(-count)
+b
+```
+
+
+```{r}
+reviews = read_csv("~/shared/minor2_2018/1-intro/lab10-trees/hotel_reviews.csv")
+table(reviews$rating)
+```
+```{r}
+complain = c("but", "no", "didn't", "never", "hot", "bugs", "old", "dirty", "small", "don't", "bad", "can't", "couldn't", "hard", "noise", "broken", "terrible", "rude", "disappointed", "disgusting", "horrible", "terrible", "rude", "disappointed", "disgusting", "horrible", "terrible", "rude", "disappointed", "disgusting", "horrible")
+
+
+reviews$pred = 0
+for (text in complain) {
+  reviews$pred = reviews$pred + stringr::str_detect(reviews$text, text)
+}
+
+source("~/shared/minor2_2018/1-intro/lab09-ratings+gini/compute_gini.R")
+gini_find_split(data = reviews, real = rating, variable = pred)
+reviews$pred2 = ifelse(reviews$pred > 2.5, "bad", "good")
+conf = table(reviews$rating, reviews$pred2)
+conf
+acc = sum(diag(conf))/sum(conf)
+acc
+```
+
+
+3) Флаги стран мира.
+Вы - дипломат инопланетной цивилизации. Приглашаете на встречу и деловой ланч представителей всех государств планеты Земля. Вы знаете, что у людей есть определенные предпочтения в еде в зависимости от религиозной принадлежности. Но обслуживающие роботы, которые будут сервировть еду на ланче, не умеют определять, кому какие блюда можно подавать. При этом у каждого представителя на столе будет стоять маленький флажок его государства. И у вас есть база данных о характеристиках этих флажков - цвете, пропорциях, и т.д + государственная религия страны. 
+
+Ваша задача сделать правила, по которым роботы будут определять представителей мусульманских государств, по характеристикам флагов. 
+
+Название стран использовать нельзя :)
+
+```{r}
+flags = read_csv("~/shared/minor2_2018/1-intro/lab10-trees/flags.csv")
+
+# уберем лишние характеристики стран
+flags = flags %>% 
+  select(-(landmass:language))
+
+# сокращаем переменную с религией до двух категорий
+flags$religion = ifelse(flags$religion == "Muslim", "Muslim", "Others")
+
+
+pred = ifelse(flags$stripes == 0, "Muslim", "Others")
+
+table(flags$religion, pred)
+
+```
+
+
+
+
+## Модель vs реальность 
+
+Представим ситуацию: 
+Вы сотрудник банка. Вам дали немного исторических данных за последний год и вам поставили задачу -- на основе каких-нибудь переменных предсказать, вернут кредит эти люди или нет. Вы построили модель и вернули вашему руководству. Руководство в восторге! Для людей за последний год удалось правильно предсказать 100% исходов кредитов. 
+
+Кажется, что все идеально. За исключением каких-то серьезных изменений на рынке не видно причин, почему эти правила могут не сработать в дальнейшем. 
+
+В чем же может быть проблема? 
+
+Когда мы попытаемся проверить работу модели на новом клиенте, то наши, казалось бы идеальные, правила буду постоянно предсказывать плохо. Все потому, что модель не может найти точное совпадение с историческими данными, на которых обучалась. 
+
+Эта проблема затрагивает два основных концепта в Data Science: генерализация (generalization) и переобучение (overfitting). **Генерализация** -- это свойство модели, при котором эта модель может быть применима к новым данным. В нашем примере модель обучалась на одних данных и стала настолько хорошо их предсказывать, что "переобучилась". 
+
+![](https://cdn-images-1.medium.com/max/771/1*cdvfzvpkJkUudDEryFtCnA.png)
+
+Почему так происходит? Доступные нам данные обычно представляют собой какую-то малую часть от генеральной совокупности людей, товаров и т.д. и на основе этой части нам нужно сделать вывод об устройстве всей совокупности. 
+
+https://bolt.mph.ufl.edu/6050-6052/unit-4/
+![](http://phhp-faculty-cantrell.sites.medinfo.ufl.edu/files/2012/07/mod10-big_picture_inference.gif)
+
+Как же мы можем проверить, что не переобучили нашу модель? На помощь приходит разделение на обучающую (train) и тестовую (test) выборки. Тестовая выборка обычно небольшая -- 20-30% от данных. В случае с кредитами мы будем создавать правила выдачи на основе обучающей выборки и считать точность модели на тестовой.
+
+![](https://cdn-images-1.medium.com/max/1600/1*-8_kogvwmL1H6ooN1A1tsQ.png)
+
+```{r}
+# загрузим еще раз данные
+credits_full = read_csv("~/shared/minor2_2018/1-intro/lab10-trees/credit_data_v2.csv")
+
+# зададим идентификаторы наблюдений
+credits_full$id <- 1:nrow(credits_full)
+
+# "зерно" для генератора случайных чисел
+set.seed(1234) 
+
+# Возьмем 80% как обучающие
+credits = credits_full %>% dplyr::sample_frac(.8)
+
+# создаем тестовый набор данных
+# через анти-джойн, чтобы убрать все наблюдения, попавшие в обучающую выборку
+credits_test = dplyr::anti_join(credits_full, credits, by = 'id') %>% select(-id)
+
+credits = credits %>% select(-id)
+```
+
+Теперь попытаемся подобрать оптимальное (по точности) правило на обучающей выборке
+```{r}
+credits$pred = ifelse( credits$seniority > 9 | credits$home == "owner", 
+                      "good",
+                      "bad")
+# accuracy
+table(credits$status, credits$pred)
+(1762+584)/3557
+```
+
+И проверим качество модели на тестовой выборке. 
+```{r}
+credits_test$pred = ifelse(credits_test$seniority > 9 | credits_test$home == "owner", "good", "bad")
+
+table(credits_test$status, credits_test$pred)
+(412+ 164)/889
+```
+Мы использовали достаточно простые правила, поэтому наша модель оказалась чуть более устойчива к появлению новых данных. 
+
+
+## Построение классификационных деревьев
+
+```{r}
+library(rpart)
+library(rpart.plot)
+```
+
+Построим дерево, предсказывающее статус кредита по стажу и типу жилья
+
+```{r fig.width=12}
+tree1 <- rpart(status ~ seniority + home, method = "class", data = credits)
+tree1
+prp(tree1)
+```
+
+* Можете ли вы "прочитать" это дерево?
+* Какие "правила" получились?
+
+Как проверить качество модели?
+
+```{r}
+pred = predict(tree1, type="class")
+
+table(pred, credits$status)
+```
+
+* Как посчитать accuracy?
+```{r}
+tb = table(pred, credits$status)
+
+acc = sum(diag(tb))/sum(tb)
+acc
+```
+
+* Как почитать прибыльность по этому прогнозу (reward)?
+```{r}
+1-acc
+```
+
+
+Сколько наблюдений в каждом узле?
+Попробуйте узнать это с помощью filter
+
+```{r}
+credits %>% filter(seniority > 2.5) %>% nrow()
+credits %>% filter(seniority <= 2.5) %>% nrow()
+credits %>% filter(seniority <= 2.5, home %in% c("ignore", "rent", "other", "parents")) %>% nrow()
+credits %>% filter(seniority <= 2.5, !(home %in% c("ignore", "rent", "other", "parents"))) %>% nrow()
+
+```
+
+Насколько наш прогноз хорошо предсказывает в разных сегментах?
+
+```{r}
+prp(tree1, extra=2)
+prp(tree1, extra=4)
+```
+
+В каких узлах наша модель работает хуже всего?
+Лучше всего?
+
+С помощью сегментов, выделенных деревом, функции filter и расчёта reward проверьте сколько мы теряем или зарабатываем в каждом сегменте.
+
+```{r}
+
+```
+
+В каких узлах наша модель работает хуже всего?
+Лучше всего?
+
+С большим числом переменных общий принцип такой же. Зафигачим дерево по всем переменным.
+
+```{r fig.width=12}
+treeA = rpart(status ~ ., method="class", data = credits, control=rpart.control(cp=0.0001))
+treeA
+prp(treeA)
+```
+
+* Можете ли вы "прочитать" это дерево?
+* Какие "правила" получились?
+* Все ли переменные из данных использованы?
+
+Как проверить качество модели? Посчитайте accuracy и reward
+```{r}
+predA = predict(treeA, type="class")
+table(credits$status, predA)
+tb1 = table(credits$status, predA)
+
+sum(diag(tb1))/sum(tb1)
+```
+
+Но насколько хорошо такие правила описывают закономерности, которые мы встретим в реальности?
+
+Попробуем ответить, проверив качество модели на тестовой выборке
+
+```{r}
+predA_test = predict(treeA, credits_test, type="class")
+
+table(predA_test, credits_test$status) ##confusion table
+tbA = table(predA_test, credits_test$status) ##confusion table
+sum(diag(tbA))/sum(tbA)
+```
+
+Проверьте accuracy и reward. Сравните с оценкой по обучающей выборке. Почему они различаются?
+
+Проблема переобучения. Для её решения используется оценка дерева на каждом уровне с помощью кроссвалидации.
+
+```{r}
+plotcp(treeA)
+
+knitr::kable(as.data.frame(treeA$cptable))
+```
+
+Обрежем дерево (по минимальному значению ошибки кроссвалидации x-error)
+
+```{r}
+treeB = prune(treeA, cp=0.0040733)
+prp(treeB, cex = 0.75, extra = 2)
+```
+
+Сравните работу обрезанного и необрезанного дерева.
+
+
+```{r}
+predB = predict(treeB, type = "class")
+table(credits$status, predB)
+
+
+```
+```{r}
+
+?ncol
+ma <- matrix(1:12, 3, 4)
+nrow(ma)   # 3
+ncol(ma)   # 4
+numeric(ncol(ma))
+library(purrr)
+?quantile
+?lm
+```
+

@@ -1,0 +1,300 @@
+---
+title: 'Exploratory Data Analysis. Lab 6: Работа с текстовыми строками. Пакет stringr'
+output:
+  html_document: default
+  pdf_document: default
+---
+
+Небольшой тест на сегодня: 
+https://docs.google.com/document/d/16uwH5juO0RFh6t5nZA3sr99SeMUO-h384Q3OHg8Bh9M/edit?usp=sharing 
+
+
+Сегодня работаем с текстовыми (строковыми) данными. Сначала немного о различиях между типами (от типа переменной зависит, что мы сможем с ней делать)
+
+# Factors & Strings
+
+## Strings
+
+```{r}
+a <- "Hello"
+a
+b <- c("Hello", "World")
+b[2]
+class(a)
+```
+
+## Factors
+
+```{r}
+movies <- ggplot2movies::movies
+movies <- na.omit(movies)
+
+str(movies)
+?ggplot2movies::movies
+
+library(dplyr)
+movies2 <- filter(movies, mpaa == "PG" | mpaa == "PG-13" | mpaa == "R" | mpaa == "NC-17")
+
+# factors & numeric (distinctions)
+class(movies2$mpaa)
+summary(movies2$mpaa)
+class(movies2$rating)
+summary(movies2$rating)
+```
+
+При преобразовании типов переменных не забывайте сохранять результат
+
+```{r}
+sort(tail(movies2$mpaa, 150))
+tail(movies2$mpaa, 150) %>% sort()
+    
+movies2$mpaa<- as.factor(movies2$mpaa)
+levels(movies2$mpaa)
+
+sort(tail(movies2$mpaa, 150))
+
+```
+
+```{r}
+movies %>% ggplot() + geom_boxplot(aes(mpaa, rating))
+movies2%>% ggplot() + geom_boxplot(aes(mpaa, rating))
+movies2%>% ggplot() + geom_boxplot(aes(mpaa, rating), color = 'red')
+movies2 %>% ggplot() + geom_boxplot(aes(NULL, rating, color=mpaa))
+```
+
+Факторы бывают и упорядоченными
+```{r}
+# ordered factors
+movies2$mpaa <- factor(movies2$mpaa, lab=c("PG", "PG-13", "R", "NC-17"), ordered=T) 
+sort(tail(movies2$mpaa, 150))
+
+head(movies2$mpaa)
+
+# look at levels
+head(factor(movies2$mpaa, levels=rev(levels(movies2$mpaa))))
+
+levels(movies2$mpaa)
+rev(levels(movies2$mpaa))
+```
+
+# Работа со строками
+
+Теперь загрузим пакет stringr, с помощью которого будем учиться работать со строками. Подробнее [тут](https://cran.r-project.org/web/packages/stringr/vignettes/stringr.html)
+
+С помощью этого пакета можно соединять (склеивать) строки, искать в них элементы по шаблону, заменять и извлекать части строк, считать длину строки и т.д.
+
+```{r}
+library(stringr)
+```
+
+
+### Простая обработка
+
+Рассмотрим сначала простой пример
+```{r}
+my_text <- c(
+  " First sentence  ",
+  " Second Sentence ",
+  " 3rd sentence ",
+  " so text.. much sense            "
+)
+my_text
+```
+
+Посчитаем длины строк
+
+```{r}
+str_length(my_text)
+```
+
+Соединим все в одну строку
+
+```{r}
+str_c(my_text, collapse="") #join multiple strings into a single string
+```
+
+Добавим одинаковый текст
+
+```{r}
+str_c("Example1:", my_text)
+
+str_c("1", " text ", "2")
+```
+
+Уберем лишние пробелы
+```{r}
+str_trim(my_text)
+```
+
+```{r}
+?str_trim
+```
+
+
+Сравним два результата
+```{r}
+str_c(str_trim(my_text), collapse="&")
+str_c(str_trim(my_text), collapse=" & ")
+```
+
+
+
+### Обнаружение паттернов
+
+Попробуем найти текст по образцу
+```{r}
+my_text <- c(
+  " First sentence1 sentence  ",
+  " Second Sentence ",
+  " 3rd sentence ",
+  " so text.. much sense            "
+)
+str_detect(my_text, "3")
+str_detect(my_text, "S")
+str_detect(my_text, "sentence")
+str_extract(my_text, "sentence") #Extract matching patterns from a string.
+my_text
+```
+
+В чем отличие str_extract от str_detect? (Читать справку всегда полезно!)
+
+```{r}
+str_extract("Data scientist is the sexiest job of 21st centure!!!", "[0-9]")
+str_extract("Data scientist is the sexiest job of 58st centure!!!", "[0-9][0-9]")
+str_extract("Data scientist is the sexiest job of 21st centure!!!", "[0-9][0-9][0-9]")
+
+str_extract("Data scientist is the sexiest job of 21st centure!!!", "[а-я]")
+
+str_detect("Data scientist is the sexiest job of 21st centure!!!", "[a-e]")
+str_extract("Data scientist is the sexiest job of 21st centure!!!", "[a-e]")
+str_extract_all("Data scientist is the sexiest job of 21st centure!!!", "[a-e]")
+
+text = c("Machine learning", "Data Science", "Visualization")
+str_extract_all(text, "[a-b]")
+str_count(text, "c")
+```
+
+Посмотрим, в скольких названиях фильмов встречается слово Book
+
+```{r}
+books = str_detect(movies$title, "Book")
+sum(books)
+
+books = str_detect(movies$title, "book")
+sum(books)
+
+books = str_detect(movies$title, "book|Book")
+sum(books)
+```
+
+Последнее можно сделать и немного по-другому: приведем все названия к одному регистру
+
+Посмотрим сначала на примере 10 фильмов с наибольшим числом голосов
+
+```{r}
+moviesCut = movies %>% top_n(votes, n = 10)
+str_to_lower(moviesCut$title)
+str_to_upper(moviesCut$title)
+str_to_title(moviesCut$title)
+```
+
+Слово book в названии:
+
+```{r}
+books = str_detect(str_to_lower(movies$title), "book")
+sum(books)
+```
+
+
+А теперь посчитаем средний рейтинг фильмов со словом book в названии и без него
+
+```{r}
+movies$book = books
+library(ggplot2)
+movies %>% 
+  group_by(book) %>% 
+  dplyr::summarise(averRating = mean(rating)) %>%
+  ggplot() + geom_bar(aes(x = book, y = averRating), stat = "identity")
+```
+
+### Изменение текста
+
+```{r}
+str_split("Data scientist is the sexiest job of 21st centure!!!!", " ")
+
+str_replace("Data scientist is the sexiest job of 21st centure!!!", "!!!", "")
+
+# а что если надо заменить паттерн, повторяющийся в строке несколько раз?
+str_replace("Data scientist is the sexiest job of 21st centure!!!", "s", "$")
+str_replace_all("Data scientist is the sexiest job of 21st centure!!!", "s", "$")
+
+```
+
+**Ваша очередь**
+
+1. Посчитайте, сколько названий содержат цифры
+
+```{r}
+library(stringr)
+movies <- ggplot2movies::movies
+movies <- na.omit(movies)
+num = str_detect(movies$title, '[0-9]')
+sum(num)
+```
+
+2. Постройте график, показывающий связь цифр в названии и рейтинга фильма 
+
+```{r}
+movies$num = num
+task2 = movies%>%
+  group_by(num)%>%
+  summarise(averRating = mean(rating))
+ggplot(data = task2)+geom_bar(aes(x = num, y = averRating), stat = 'identity')
+
+
+```
+
+3. Постройте график, показывающий связь длины названия (str_length) и рейтинга фильма 
+
+```{r}
+len_title = str_length(movies$title)
+movies$len_title = len_title
+task3 = movies%>%
+  group_by(len_title)%>%
+  summarise(avgRating = mean(rating))%>%
+  arrange(len_title)
+ggplot(data = task3)+
+  geom_point(aes(x = len_title, y = avgRating), stat = 'identity')
+ggplot(data = task3)+
+  geom_histogram(aes(x = avgRating, fill = len_title), stat = 'indentity')
+```
+
+4. Отберите 150 фильмов с наибольшим числом голосов, из них оставьте 100 с наивысшим рейтингом. повторите для них п.1-3
+
+```{r}
+task4 = movies%>%arrange(votes)%>%top_n(150)%>%arrange(rating)%>%top_n(100)
+task4
+```
+
+Продолжим работать с базой сообщений очевидцев НЛО. Прошлый раз мы совсем не использовали последний столбец с описанием. Посмотрим на него сегодня подробнее
+
+Загружаем данные.
+
+```{r}
+library(readr)
+ufo = read_csv("~/shared/minor2_2018/1-intro/data/ufo.csv")
+# naming columns
+colnames(ufo) = c("Sighted", "Reported", "Location", "Shape", "Duration", "Description")
+
+# stringr как инструмент очистки баз от шума
+
+ufo$Description <- str_replace_all(ufo$Description, "&amp", " ")
+
+```
+
+* Удалите другие, лишние на ваш взляд, слова и/или символы
+* Посмотрите, встречаются ли в описании слова, которые помогут определить пол очевидца (woman, female, girl), не забудьте про регистр. Создайте новую переменную, которая будет показывать, встретилось ли хотя бы одно из таких слов
+* Постройте график, показывающий связь между полом (очень приближенно определенным -- по встречающимся словам) и разницей между временем наблюдения и временем отчета (см. предыдущую лабораторную)
+
+
+* Опишите свои выводы в отчете в формате Rmd ([напоминание о создании отчета](https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf)) 

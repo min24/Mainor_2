@@ -1,0 +1,131 @@
+---
+title: "sentiment"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+## Анализ мнений и оценок (Sentiment analysis)
+
+Попробуем проанализировать эмоциональную окраску (оценку, sentiment) отзывов про отели. Для этого будем использовать словарь оценочной лексики Четверкина.
+
+```{r}
+sentdict <- read.table("~/shared/minor2_2017/2-tm-net/lab02_tf_idf/sentdict.txt", header=T, stringsAsFactors=F) # словарь оценочной лексики
+
+head(sentdict)
+tail(sentdict)
+```
+
+Так, для каждого отзыва мы можем посчитать, насколько оценочный характер он носит -- без привязки к характеру (позитивный или негативный). 
+
+```{r}
+library(tidyverse)
+library(tidytext)
+reviews <- read_csv("~/shared/minor2_2017/2-tm-net/lab02_tf_idf/reviews.csv")  
+
+reviews.tidy = reviews %>% 
+  select(id, lem) %>% 
+  unnest_tokens(words, lem)
+
+rustopwords <- data.frame(words=stopwords::stopwords("ru"), stringsAsFactors=FALSE) 
+# словарь со стоп-словами
+
+reviews.tidy = reviews.tidy %>%
+  anti_join(rustopwords)
+
+reviews.sent = reviews.tidy %>% 
+  inner_join(sentdict) #почему используется inner_join, а не anti_join?
+
+reviews.sent_count = reviews.sent %>% 
+  group_by(id) %>% 
+  summarise(mean = mean(value)) #посчитаем
+
+reviews.sent_count %>% arrange(-mean) %>% head() # самые оценочные отзывы
+reviews$review[reviews$id == "rn280308837"]
+
+reviews.sent_count %>% arrange(mean) %>% head() # самые нейтральные отзывы
+reviews$review[reviews$id == "rn219370699"]
+```
+
+Теперь мы можем попытаться создать свой специфичный для наших данных сентимент-словарь.
+
+Возьмем за отрицательные отзывы все те, кто оценил отель на 1-2 балла, а положительные -- на 5. Посмотрим распределение оценок посетителей 
+
+```{r}
+reviews %>% ggplot() + geom_bar(aes(rating)) + theme_bw()
+
+positive = reviews.sent %>% filter(id %in% reviews$id[reviews$rating==5]) %>% mutate(sent = "positive")
+#можно дополнительно отфильтровать по полезности отзыва (stars == 5)
+
+negative = reviews.sent %>% filter(id %in% reviews$id[reviews$rating<3]) %>% mutate(sent = "negative")
+
+reviews.pmi = rbind(positive, negative) %>% dplyr::select(-id,-value)
+reviews.pmi = reviews.pmi %>% dplyr::count(words, sent) %>% spread(sent, n, fill = 0)
+```
+
+## Pointwise Mutual Information (PMI)
+
+Отберем оценочные слова из словаря Четверкина, характерные для каждого из классов с помощью PMI. 
+
+```{r}
+freq_p = reviews.pmi$positive
+freq_n = reviews.pmi$negative
+sum_p = sum(reviews.pmi$positive) 
+sum_n = sum(reviews.pmi$negative) 
+
+pmi_p = log((freq_p/sum_p)/((freq_p+freq_n)/(sum_p+sum_n)*sum_p/(sum_p+sum_n))+1)
+reviews.pmi$PMI_p = pmi_p
+
+pmi_n = log((freq_n/sum_n)/((freq_p+freq_n)/(sum_p+sum_n)*sum_n/(sum_p+sum_n))+1)
+reviews.pmi$PMI_n = pmi_n
+
+reviews.pmi %>% 
+  ggplot(aes(x=log(positive+negative), y=PMI_p-PMI_n, color=5*PMI_p-PMI_n, label=words)) +
+  scale_color_gradient2(low="red", high="blue") +
+  geom_point()
+
+reviews.pmi %>% 
+  ggplot(aes(x=log(positive+negative), y=PMI_p-PMI_n, color=5*PMI_p-PMI_n, label=words)) +
+  scale_color_gradient2(low="red", high="blue") +
+  geom_text(check_overlap = TRUE)
+```
+
+
+## Dunning log-likelihood (G2)
+
+
+```{r}
+g2 = function(a, b) {
+  c = sum(a)
+  d = sum(b)
+  E1 = c * ((a + b) / (c + d))
+  E2 = d * ((a + b) / (c + d))
+  return(2*((a*log(a/E1+1e-7)) + (b*log(b/E2+1e-7))))
+}
+
+reviews.pmi <- reviews.pmi %>% 
+  mutate(g2=g2(positive, negative))
+```
+
+
+Посмотрим на соотношения частотности, PMI и G2:
+
+```{r}
+reviews.pmi %>% 
+  ggplot(aes(x=log(positive-negative), y=g2, color=5*PMI_p-PMI_n, label=words)) +
+  scale_color_gradient2(low="red", high="blue") +
+  geom_point() 
+
+reviews.pmi %>% 
+  filter(PMI_p>0.5 | PMI_n>0.5) %>% 
+  ggplot(aes(x=log(positive-negative), y=g2, color=5*PMI_p-PMI_n, label=words)) + 
+  scale_color_gradient2(low="red", high="blue") + 
+  geom_text(check_overlap=TRUE)
+```
+
+**Задание**
+
+1. При построении оценочного словаря для нашей базы отзывов мы использовали только отзывы с оценками 1-2 и 5. Теперь ваша задача — пользуясь этим словарем вычислить степень положительного/отрицательного сентимента для всех отзывов из базы с оценками 3-4. Подсказка: используйте PMI_p и PMI_n в качестве меры оценочности. Постройте диаграмму рассеяния (scatterplot) с распределением этих отзывов по степени оценочности.
+
+2(*). Оцените, какие слова наиболее специфичны для отрицательных (1-2) и положительных (5) отзывов, не ограничиваяюсь только лексикой из словаря Четверкина, а учитывая полные тексты отзывов. Постройте облака слов и диаграмму рассеяния, иллюстрирующую, какие слова характерны для каждого класса отзывов.
+

@@ -1,0 +1,139 @@
+---
+title: "hw_21_10"
+author: "lnguen_1, Нгуен Лонг Зюи БЭК 171, группа 4"
+date: "8/10/2018"
+output: html_document
+---
+
+
+
+
+Install packages and download data:
+```{r}
+library(dplyr)
+library(ggplot2)
+library(readr)
+
+airline = read_csv("~/shared/minor2_2018/1-intro/data/airline_sub_4.csv")
+airport = read_csv("~/shared/minor2_2018/1-intro/data/airport_sub_4.csv")
+lounge = read_csv("~/shared/minor2_2018/1-intro/data/lounge_sub_4.csv")
+seat = read_csv("~/shared/minor2_2018/1-intro/data/seat_sub_4.csv")
+```
+
+# 1. First, we will look at the airline's data, I predict that overall_rating is proportional to the recommended rate of customer feedback.
+```{r}
+#I created a new data frame includes variables : airline_recommended, airline_rating, airline_recommended, airline_rating, count_feedback, ratio_recommended
+airline_properties = airline%>%filter(is.na(overall_rating)==FALSE)%>%group_by(airline_name)%>%summarise(airline_recommended = sum(recommended), airline_rating = mean(overall_rating, na.rm = TRUE), count_feedback = n(), ratio_recommended = airline_recommended/count_feedback)%>%arrange(-count_feedback)
+airline_properties
+
+#I choose the airlines with no too little (>15) feedback number to plot the airline_rating chart in ascending order of ratio_recommended.
+airline_properties%>%filter(count_feedback>15)%>%select(airline_rating, ratio_recommended)%>%arrange(ratio_recommended)%>%
+ggplot()+
+  geom_line(aes(x = ratio_recommended, y = airline_rating))+
+  ylab("Airline's rating")+
+  xlab("Ratio of recommendation")+
+  ggtitle("How recommendation effects overall rating")+
+  theme_bw()
+
+```
+
+From this line plot, we have a result that overall_rating is proportional to the recommended rate of customer feedback. As a new airline owner, we need mind on recommeded_ratio. We can change it by getting staff to pay attention to customer feedback
+(In this dataset, I thought 'recommended' means the mistakes in customer's feedbacks were fixed or not)
+
+
+
+
+
+
+# 2. Let's see how many airlines on the market:
+Amount of airlines
+```{r}
+count(dplyr::distinct(data.frame(c(airline$airline_name, seat$airline_name, lounge$airline_name))))
+
+```
+There are 298 airlins on the market
+
+
+# 3. Here are some top rating of airline, airport, seat and lounge
+```{r}
+# Top airport
+airport_rating = airport%>%select(airport_name, overall_rating, content)%>%na.omit()%>%group_by(airport_name)%>%summarise(airport_rating = mean(overall_rating), count_feedback = n())%>%arrange(-airport_rating)
+airport_rating
+?top_n
+```
+
+```{r}
+# Top airline
+airline_rating = airline%>%select(airline_name, overall_rating, content)%>%na.omit()%>%group_by(airline_name)%>%summarise(airline_rating = mean(overall_rating), count_feedback_airline = n())%>%arrange(-airline_rating)
+airline_rating
+```
+```{r}
+# Top airlines have the best seat
+seat_rating = seat%>%select(airline_name, overall_rating, content)%>%na.omit()%>%group_by(airline_name)%>%summarise(seat_rating = mean(overall_rating), count_feedback_seat = n())%>%arrange(-seat_rating)
+seat_rating
+```
+```{r}
+# Top airlines have the best lounge
+lounge_rating = lounge%>%select(airline_name, overall_rating, content)%>%na.omit()%>%group_by(airline_name)%>%summarise(lounge_rating = mean(overall_rating), count_feedback_lounge = n())%>%arrange(-lounge_rating)
+lounge_rating
+```
+
+
+
+# 4. I created a new dataframe airline_properties that includes variables: airline_name, overall_rating, cabin_flown, recommended, date, author_country
+```{r}
+lounge = lounge%>%mutate(cabin_flown = lounge_type)
+key = c('airline_name', 'overall_rating', 'cabin_flown', 'recommended', 'date', 'author_country')
+airline_properties = full_join(full_join(airline, seat, by = key), lounge, by = key)%>%select(airline_name, overall_rating, cabin_flown, recommended, date, author_country)
+airline_properties
+```
+4.1 Rating of customers in each cabin flown
+```{r}
+airline_properties1 = airline_properties%>%filter(is.na(cabin_flown)==FALSE & cabin_flown != 'Other')
+ggplot(data = airline_properties1)+
+  geom_boxplot(aes(x = cabin_flown, y = overall_rating, fill = cabin_flown), na.rm = TRUE)+
+  ylab("Rating")+
+  xlab("Class")+
+  theme_bw()+
+  ggtitle("Rating of customers in each cabin flown")
+
+```
+
+4.2 Top 10 countries have the most feedback
+
+```{r}
+airline_properties%>%group_by(author_country)%>%summarise(count = n(), overall_rating = mean(overall_rating, na.rm = TRUE))%>%arrange(-count)%>%na.omit()%>%head(10)
+
+```
+
+
+In which months do customers send more feedback? 
+```{r}
+p = airline_properties%>%mutate(month = lubridate::month(date, label = TRUE))%>%group_by(month)
+ggplot(data = p)+
+    geom_bar(aes(x = month, fill = factor(recommended, labels = c('Recommended', 'Not recommended'))))+
+scale_fill_manual(name = "Recommend feedback", values = c("#DDC488", "#8B814C"))+
+theme_bw()
+```
+
+In January and July customers send more feedback than all times.
+
+
+
+
+4.3. Draw a graph to describe the correlation between the amount feedback was recommended and the rating of each airline
+I created a new dataframe airline_properties2 that was group by airline_name and includes variables: rating, sum_recommended and count_feedback
+```{r}
+airline_properties2 = airline_properties[1:5]%>%na.omit()%>%group_by(airline_name)%>%summarise(rating = mean(overall_rating), sum_recommended = sum(recommended), count_feedback = n())
+ggplot(data = airline_properties2)+
+  geom_point(aes(x = rating, y = sum_recommended, size = count_feedback, colour = count_feedback))+
+   xlab("Average rating of each airline") +
+  ylab("Sum of recommended") +
+  ggtitle("Combination the characteristics of each airline")+
+  theme_bw()+
+  scale_size(name="")+
+  scale_color_continuous(name="Amount of feedback")
+```
+
+
+

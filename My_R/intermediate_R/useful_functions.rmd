@@ -1,0 +1,36 @@
+abs
+round
+sum
+mean
+list
+seq
+rep
+```{r}
+seq(8,2,-2)
+```
+```{r}
+rep(seq(8,2,-2),2)
+rep(seq(8,2,by=-2), times=4)
+
+```
+sort
+```{r}
+sort(rep(seq(8,2,by=-2), times=4), decreasing = T)
+```
+
+is.
+as.
+unlist
+append
+rev
+
+
+```{r}
+li = list(log = TRUE,
+          ch = "Hello",
+          int_vec = sort(rep(seq(8,2,-2),3)))
+
+li
+append(li, rev(li))
+```
+

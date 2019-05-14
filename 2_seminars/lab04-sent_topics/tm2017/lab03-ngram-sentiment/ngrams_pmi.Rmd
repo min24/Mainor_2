@@ -1,0 +1,221 @@
+---
+title: "n-grams"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+## N-граммы
+
+Пока что единицей измерения текста у нас были отдельные слова. Тем самым мы полностью игнорировали информацию о последовательности слов в тексте. По этой причине векторное представление документа еще называют «мешком слов» (bag of words), потому что мы рассматриваем набор слов, но не их порядок. Однако есть простой способ, принципиально не меняя наших инструментов измерения текста, инкорпорировать в них информацию о последовательности слов — *n-граммы*. Вместо одного слова возьмем в качестве единицы несколько стоящих подряд слов. 
+
+```{r}
+library(tidyverse)
+library(tidytext)
+reviews <- read_csv("~/shared/minor2_2017/2-tm-net/lab02_tf_idf/reviews.csv") 
+
+reviews.bigrams = reviews %>% 
+  unnest_tokens(bigram, lem, token = "ngrams", n = 2)
+
+reviews.bigrams %>% 
+  dplyr::count(bigram, sort = TRUE)
+
+reviews.bifiltered = reviews.bigrams %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  filter(!word1 %in% stopwords::stopwords("ru")) %>% 
+  filter(!word2 %in% stopwords::stopwords("ru")) 
+
+reviews.bifiltered %>% 
+  dplyr::select(word1, word2) %>% 
+  dplyr::count(word1, word2, sort = TRUE)
+
+reviews.bifiltered %>% 
+  filter(word2 == "центр") %>% 
+  dplyr::count(word1, word2, sort=TRUE) %>%
+  dplyr::select(word1, word2, n)
+
+reviews.bifiltered %>% 
+  filter(word2 == "центр") %>% 
+  dplyr::count(rating, word1, sort=TRUE) %>% 
+  filter(rating<3)
+
+reviews.bigrams = reviews.bifiltered %>% 
+  unite(bigram, word1, word2, sep = " ")
+```
+
+**Задание**
+
+1. Составьте список самых частотных триграмм для корпуса отзывов (не включайте в триграммы стоп-слова).
+
+```{r}
+reviews.trigrams = reviews %>% 
+  unnest_tokens(bigram, lem, token = "ngrams", n = 3)
+
+reviews.trigrams %>% 
+  dplyr::count(bigram, sort = TRUE)
+
+reviews.bifiltered = reviews.trigrams %>% 
+  separate(bigram, c("word1", "word2", "word3"), sep = " ") %>% 
+  filter(!word1 %in% stopwords::stopwords("ru")) %>% 
+  filter(!word2 %in% stopwords::stopwords("ru")) %>%
+  filter(!word3 %in% stopwords::stopwords("ru"))
+
+reviews.bifiltered %>% 
+  dplyr::select(word1, word2, word3) %>% 
+  dplyr::count(word1, word2, word3, sort = TRUE)
+
+reviews.bifiltered %>% 
+  filter(word1 == "ужасный") %>% 
+  dplyr::count(word1, word2,word3, sort=TRUE) %>%
+  dplyr::select(word1, word2,word3, n)
+
+reviews.bifiltered %>% 
+  filter(word2 == "центр") %>% 
+  dplyr::count(rating, word1, sort=TRUE) %>% 
+  filter(rating>3)
+
+reviews.trigrams = reviews.bifiltered %>% 
+  unite(bigram, word1, word2,word3, sep = " ")
+```
+
+
+## Совместная встречаемость
+
+Что если мы хотим посмотреть на то, как все слова связаны друг с другом?
+Для этого мы можем применить сетевой анализ к нашим биграмам. Представим наши слова в виде сети.
+
+```{r}
+library(igraph)
+
+# выберем только часто встречающиеся биграммы и сделаем сеть
+reviews.net = reviews.bifiltered %>% 
+  dplyr::select(word1, word2) %>% 
+  dplyr::count(word1, word2, sort = TRUE) %>%
+  filter(n >= 50) %>% 
+  graph_from_data_frame()
+
+reviews.net
+
+# теперь можно визуализировать то, что получилось
+
+library(ggraph)
+set.seed(2018)
+
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(reviews.net, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "lightblue", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+```
+
+При помощи данной визуализации мы можем увидеть, как пары слов друг с другом связаны. Но более интеренсным для нас будет анализ того, как слова потенциально могут встречаться друг с другом в одном документе, даже если они не стоят рядом в предложении. 
+
+Для нашей следующей задачи мы должны немного изменить то, как представлены наши данные. Нам нужно сначала представить данные в широком формате. То есть, сделать из них матрицу. Затем мы считаем нужную нам метрику, которая покажет, насколько слова связаны друг с другом. В нашем случае мы будем использовать PMI снова. После того, как нужная метрика посчитана, мы можем снова представить наши данные в длинном формате для дальнейшего построения графа.
+
+![](https://www.tidytextmining.com/images/widyr.jpg)
+
+
+```{r}
+library(widyr)
+library(RCurl)
+
+script <- getURL("https://raw.githubusercontent.com/voskresenskiy/widyr/master/R/pmi_changed.R", ssl.verifypeer = F)
+eval(parse(text = script))
+script <- getURL("https://raw.githubusercontent.com/paulponcet/lplyr/master/R/col_name.R", ssl.verifypeer = F)
+eval(parse(text = script))
+
+
+```
+
+
+```{r}
+reviews.tidy = reviews %>% 
+  dplyr::select(id, lem) %>% 
+  unnest_tokens(words, lem)
+
+rustopwords <- data.frame(words=stopwords::stopwords("ru"), stringsAsFactors=FALSE) 
+
+reviews.tidy = reviews.tidy %>%
+  anti_join(rustopwords)
+
+word_pmi <- reviews.tidy %>%
+  group_by(words) %>%
+  filter(n() >= 50)
+
+pmi_counts = pairwise_pmi(word_pmi, words, id, sort = T)
+pmi_counts$pmi = ifelse(pmi_counts$pmi < 0, 0, pmi_counts$pmi)
+
+pmi_counts %>%
+  filter(item1 == "центр")
+
+pmi_counts %>%
+  filter(item1 %in% c("центр", "магазин", "исторический", "ужасный")) %>%
+  group_by(item1) %>%
+  top_n(6) %>%
+  ungroup() %>%
+  mutate(item2 = reorder(item2, pmi)) %>%
+  ggplot(aes(item2, pmi)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ item1, scales = "free") +
+  coord_flip()
+```
+
+Применим сетевые методы
+
+```{r}
+set.seed(2016)
+
+pmi_graph = pmi_counts %>%
+  filter(pmi > 2) %>%
+  graph_from_data_frame()
+
+kc <- walktrap.community(pmi_graph)
+length(kc) 
+sizes(kc)
+table <- cbind(kc$membership, kc$names)
+table = as.data.frame(table)
+
+filter(table, V1 == 5) %>% head() # ванные принадлежности
+filter(table, V1 == 29) %>% head() # еда
+
+#View(filter(table, V1 == 5)) # ванные принадлежности
+#View(filter(table, V1 == 29)) # еда
+```
+
+Давайте нарисуем сеть для первых десяти кластеров
+
+```{r}
+table$V1 = as.character(table$V1)
+table$V2 = as.character(table$V2)
+
+pmi_counts_cl = pmi_counts %>% 
+  filter(pmi > 2) %>%
+  left_join(table, by = c("item1" = "V2")) %>%
+  dplyr::rename(item1_cl = V1) %>%
+  left_join(table, by = c("item2" = "V2")) %>%
+  dplyr::rename(item2_cl = V1) %>%
+  filter(item1_cl %in% c(1:10) & item2_cl %in% c(1:10))
+
+
+g = pmi_counts_cl %>%
+  dplyr::select(item1, item2,pmi) %>%
+  graph_from_data_frame()
+
+V(g)$cl=as.character(table$V1[match(V(g)$name,table$V2)])
+
+ggraph(g, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = pmi), show.legend = FALSE) +
+  geom_node_point(aes(color = cl), size = 5) +
+  geom_node_text(aes(label = name), repel = TRUE) +
+  theme_void()
+```
+
+**Задание**
+
+1. Выберите три любых кластера в сети, посмотрите, какие слова туда попали, постарайтесь проинтерпретировать получившиеся. Если это сложно сделать, просто посмотрев на слова, посмотрите, в каком контексте они встречаются в отзывах.
+
+2*. Посчитайте для слов в этих кластерах G^2 или PMI, которые покажут, насколько эти слова положительные или отрицательные. 
+

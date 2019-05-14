@@ -1,0 +1,34 @@
+Рассмотрим такую ситуацию: вы -- студент, который мечтает обучаться Data Science в Американском университете.
+
+Необходимо будет отфильтровать пропущенные по одной �переменной INTERNATIONAL (доля иностранный студентов) с помощью функции is.na(), прописанной в функции filter(). Затем необходимо отобрать университеты, в которых одновременно выполняются два условия: доля международных студентов больше 0.2, и программы только �магистерские (переменная TYPE).
+
+Необходимый для выполнения задачи код находится ниже. Он прописан построчно. Ваше задание -- переписать этот же код, но с помощью пайпов (%>%).
+
+Note:  Пайпы значительно упрощают агрегацию данных. Вместо того, чтобы каждый раз писать код для преобразования датасета и перезаписывать датасет, можно воспользоваться пайпами, создавая последовательность операций. 
+
+Hint: Горячая клавиша для пайпов -- Сtrl + Shift + M.
+
+
+```{r}
+library(dplyr)
+ds <- read.csv(url("https://stepik.org/media/attachments/lesson/56205/timesMergedData.csv"))
+ds
+#код, записанный построчно
+df1 <- filter(ds, !is.na(INTERNATIONAL))
+df1 <- filter(df1, INTERNATIONAL > 0.2 & TYPE == "M")
+
+#код, записанный через пайпы
+df2 <- ds %>% filter(!is.na(INTERNATIONAL)) %>% filter(INTERNATIONAL > 0.2 & TYPE == "M")
+```
+
+
+```{r}
+
+library(dplyr)
+MacD <- read.csv(url("https://stepik.org/media/attachments/lesson/56205/McDonalds.csv"))
+MacD
+##не забудьте перед выполнением задания оставить следующие категории: "Beef & Pork", "Chicken & Fish", отфильтровать значения Calories и Cholesterol и посчитать среднии по переменным Sugar и Protein.
+
+MacD <- MacD %>% filter(Calories > 500 & Cholesterol >= 80 & Category %in% c("Beef & Pork", "Chicken & Fish")) %>% group_by(Category) %>% summarise(mean_sugars = mean(Sugars), mean_protein = mean(Protein), Count = n())
+MacD
+```

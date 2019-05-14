@@ -1,0 +1,26 @@
+## Отбор переменных
+
+При работе с большим таблицами иногда бываются интересны для анализа только некоторые переменные. Отберем для простоты дальнейшего анализа только данные о номере рейса и задержках, удалим из рассмотрения переменную `arr_time`. 
+
+```{r}
+library(nycflights13)
+library(dplyr)
+library(ggplot2)
+flData = nycflights13::flights
+flData
+```
+
+
+```{r exe12}
+#?select
+#str(flData)
+flData = dplyr::select(flData, tailnum, dep_delay:arr_delay, -arr_time)
+# Select collumns: tailnum, from dep_delay to arr_delay e4xcept arr_time
+#str(flData)
+flData
+
+# summary(flData$tailnum)
+# Change name collumn
+flData = dplyr::rename(flData, tail_num = tailnum)
+summary(flData$tail_num) # проверим, сработала ли функция
+```

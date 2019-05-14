@@ -1,0 +1,109 @@
+---
+title: "hw2"
+author: "lnguen_1"
+date: "12/17/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T)
+```
+1.
+```{r}
+library(readr)
+kickstarter = read_csv("~/shared/minor2_2018/data/kickstarter.csv")
+```
+```{r}
+library(dplyr)
+kickstarter %>% group_by(state) %>% summarise(count = n())
+```
+2.
+```{r}
+kickstarter %>% filter(state == "successful") %>%  group_by(category) %>% summarise(m = mean(usd_pledged))
+
+```
+3.
+```{r}
+kickstarter %>% filter(state == "successful") %>% group_by(main_category) %>% summarise(count = n(), mean = mean(usd_pledged))
+
+```
+
+
+4.
+```{r}
+kickstarter$suc = ifelse(kickstarter$state == "successful", 1, 0)
+
+kickstarter %>% group_by(category) %>% summarise(count = n(), suc = sum(suc)) %>% mutate(percent = suc/count) %>% arrange(-percent)
+
+
+```
+5.
+```{r}
+library(lubridate)
+class(kickstarter$launched)
+
+kickstarter$month = month(kickstarter$launched, label = T)
+
+kickstarter %>% group_by(month) %>% summarise(count = n()) %>% arrange(-count)
+```
+6.
+```{r}
+kickstarter %>% group_by(month) %>% summarise(count = n(), suc = sum(suc)) %>% mutate(percent = suc/count) %>% arrange(-percent)
+
+```
+
+
+7.
+```{r}
+kickstarter$deadline = date(kickstarter$deadline)
+kickstarter$launched = date(kickstarter$launched)
+kickstarter$time_diff = kickstarter$deadline-kickstarter$launched
+
+kickstarter %>% group_by(main_category) %>% summarise(count = n(), mean_time = mean(time_diff)) %>% arrange(-count)
+
+```
+8.
+```{r}
+
+train = kickstarter %>% mutate(year = year(kickstarter$launched)) %>% filter(year < 2017)
+test = anti_join(kickstarter, train)
+```
+
+9,10.
+```{r}
+library(rpart)
+library(rpart.plot)
+```
+
+```{r}
+library(rpart)
+tree =  rpart(state ~ main_category + country + goal + currency + time_diff + currency, data = train)
+prp(tree)
+
+```
+11.
+```{r}
+prp(tree, extra = 4)
+
+con = ifelse(kickstarter$main_category %in% c("Crafts","Fashion","Food","Journalism","Technology"), "failed", "successful")
+kickstarter %>% filter(kickstarter$main_category %in% c("Crafts","Fashion","Food","Journalism","Technology")) %>% nrow()
+table(kickstarter$state, con)
+37754/(37754+11736)
+tree
+```
+
+
+
+12.
+```{r}
+pred = predict(tree, test, type = "class")
+
+conf = table(test$state, pred)
+
+sum(diag(conf)/sum(conf))
+
+```
+
+
+
+

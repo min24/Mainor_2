@@ -1,0 +1,515 @@
+---
+title: Text mining
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+## Представление текста в данных
+
+Задачи text mining обычно имеют дело с большим количеством фрагментов
+текста, например: твиты, новости, отзывы и т.п. Собрав такие данные,
+мы чаще всего получаем таблицу, одна из колонок которой содержит эти
+тексты, по одному на строку. В остальных колонках содержатся
+*метаданные* об этих текстах — автор, название, дата и т.п.
+
+Наш сегодняшний пример: коллекция из 10 произведений двух авторов —
+Фриды Вигдоровой и Любови Воронковой, которые писали прозу для
+подростков в 1940-е — 1950-е годы. Произведения довольно длинные,
+поэтому для удобства работы они разбиты на фрагменты длиной примерно в
+400 слов.
+
+```{r}
+library(readr)
+library(ggplot2)
+
+vv = read.csv("~/shared/minor2_2018/2-tm-net/lab03-tm/vv.csv", stringsAsFactors=FALSE)
+```
+
+Тексты находятся в колонке text. 
+
+Мы хотим использовать текст как переменную, чтобы включить в наши
+модели. Но непонятно, как к текстовой переменной применить простые
+математические операции. Например, сравнение. Какой текст «больше» — в
+первой строке или в тринадцатой? А какие тексты ближе друг к другу — 1
+и 2 или 2 и 3? 
+
+Вывод: нужно разложить текст на какие-то простые единицы, которые
+понятно, как считать и сравнивать. 
+
+Чаще всего удобно взять в качестве такой единицы *слово* и сделать
+каждое слово в тексте отдельной переменной. 
+
+Есть два способа представить разбитый на слова текст в виде таблицы: 
+
+* длинный формат — для каждого слова в тексте создается отдельная
+  строка в данных;
+* широкий формат — для каждого слова создается отдельная колонка в
+  данных, текст — это одна строка.
+  
+Мы начнем с длинного формата, знакомого вам, например, по
+ggplot2. Для преобразования текста в этот формат используем пакет
+tidytext.
+
+```{r}
+library(dplyr)
+library(tidytext)
+??unnest_tokens
+vv.tidy = vv %>%
+    unnest_tokens(words, text)
+
+```
+
+Токены — это единицы текста, в нашем случае — слова. В качестве токенов
+могут выступать буквы, предложения и т.п.
+
+## Частотность
+
+Теперь у нас в таблице есть колонка со словами. Это категориальная
+переменная, которая принимает столько значений, сколько есть разных
+слов в текстах. 
+
+```{r}
+vv.tidy %>%
+    dplyr::select(words) %>% count()
+vv.tidy %>%
+    dplyr::select(words) %>%
+    n_distinct() # ого, их довольно много!
+```
+
+Мда, все значения не посмотришь. Но можно посмотреть самые частотные,
+наверное, они самые важные и интересные?
+
+```{r}
+vv.tidy %>%
+    dplyr::count(words, sort = TRUE) %>%
+    top_n(15, n) %>%
+    ggplot(aes(x = reorder(words, n), y = n)) +
+    geom_col() +
+    labs(x = "word") + 
+    coord_flip() +
+    theme_minimal()
+```
+
+Не слишком информативно. Так, а как вообще выглядит распределение?
+
+## Частотность языковых знаков. Закон Ципфа
+
+```{r}
+vv.tidy %>%
+    dplyr::count(words, sort = TRUE) %>%
+    filter(n > 250) %>%
+    ggplot(aes(rev(reorder(words, n)), n)) +
+    geom_bar(stat = "identity", show.legend = FALSE) +
+    theme_minimal()
+```
+
+Распределение с длинным хвостом. Few giants, many dwarfs.
+
+Более того, замечено, что для любого достаточно большого набора
+текстов распределение частотностей слов лог-линейно:
+
+```{r}
+vv.tidy %>%
+    dplyr::count(words, sort = TRUE) %>%
+    mutate(rank = row_number()) %>%
+    ggplot(aes(rank, n)) +
+    geom_line() +
+    scale_x_log10() +
+    scale_y_log10()
+```
+
+Эта закономерность называется Законом Ципфа.
+
+## Стоп-слова
+
+Самые частотные слова в языке — предлоги, союзы, местоимения — имеют
+самые абстрактные значения. Если нас интересует содержание текста, они
+для нас неинформативны. Назовем их «стоп-слова» и попробуем выкинуть
+из текста. 
+
+В пакете stopwords уже есть заготовленный список стоп-слов для
+русского языка. 
+
+```{r}
+library(stopwords)
+head(stopwords("ru"), 20)
+```
+
+Мы уже видели очень похожий список... 
+
+```{r}
+top100words = vv.tidy %>%
+    dplyr::count(words, sort=TRUE) %>%
+    top_n(100, n)
+
+top100words$words
+head(top100words, 20)
+```
+
+Выбросим из текстов стоп-слова и посмотрим, что осталось.
+
+```{r}
+rustopwords = data.frame(words=stopwords("ru"), stringsAsFactors=FALSE)
+vv.nonstop = vv.tidy %>%
+    anti_join(rustopwords)
+
+#filter(!(words %in% stopwords("ru")))
+```
+
+На сколько процентов уменьшился объем текста?
+
+## Облако слов
+
+Теперь построим список самых частотных слов в форме облака слов.
+
+```{r fig.height=7, fig.width=7}
+library(wordcloud2)
+
+vv.nonstop.counts = vv.nonstop %>%
+    dplyr::count(words, sort=TRUE) %>% 
+    top_n(50, n)
+
+wordcloud2(data = vv.nonstop.counts)
+
+wordcloud2(data = vv.nonstop.counts, color = "black", rotateRatio = 0)
+```
+
+Различаются ли тексты двух писательниц?
+
+Добавим в данные переменные «автор» и «книга»: 
+
+```{r}
+library(stringr)
+
+vv = vv %>%
+    mutate(author = str_extract(title, '[^.]+')) %>%
+    mutate(book = str_extract(title, '[^.]+[.][^.]+'))
+
+vv.tidy = vv %>%
+    unnest_tokens(words, text)
+```
+
+**Ваша очередь**
+
+1. Постройте частотные списки для текстов каждой из двух писательниц,
+   выведите облака слов. Используйте список стоп-слов из пакета stopwords.
+
+
+```{r}
+library(wordcloud2)
+library(stopwords)
+vv.tidy1 = vv.tidy %>% filter(author == 'vigdorova')
+vv.tidy1 %>% dplyr::count(words, sort = TRUE) %>% filter(n > 250) %>%
+    ggplot(aes(rev(reorder(words, n)), n)) +
+    geom_bar(stat = "identity", show.legend = FALSE) +
+    theme_minimal()
+top100words1 = vv.tidy1 %>% dplyr::count(words, sort = TRUE) %>% top_n(100, n)
+top100words1$words %>% head(20)
+rustopwords = data.frame(words = stopwords("ru"), stringsAsFactors = TRUE)
+vv.nonstop1 = vv.tidy1 %>% filter(!(words %in% stopwords("ru")))
+vv.nonstop.counts1 = vv.nonstop1 %>% dplyr::count(words, sort = TRUE) %>% top_n(50, n)
+wordcloud2(data = vv.nonstop.counts1, color = "black", rotateRatio = 0)
+#------------------------------------------------------------------------------
+vv.tidy2 = anti_join(vv.tidy, vv.tidy1)
+top100words2 = vv.tidy2 %>% count(words, sort = TRUE) %>% top_n(100, n)
+top100words1$words %>% head(20)
+rustopwords = data.frame(words = stopwords("ru"), stringsAsFactors = TRUE)
+vv.nonstop2 = vv.tidy2 %>% filter(!(words %in% stopwords("ru")))
+vv.nonstop.counts2 = vv.nonstop1 %>% count(words, sort = TRUE) %>% top_n(50, n)
+wordcloud2(data = vv.nonstop.counts2, color = "black", rotateRatio = 0)
+
+
+```
+
+
+2. Используйте в качестве списка стоп-слов те слова, которые встретились в общем списке слов более 150 раз.
+
+
+```{r}
+stopwords1 = vv.tidy1 %>% filter(words %in% stopwords('ru')) %>% count(words, sort = TRUE) %>% filter(n > 150)
+stopwords2 = vv.tidy2 %>% filter(words %in% stopwords('ru')) %>% count(words, sort = TRUE) %>% filter(n > 150)
+```
+
+3. (*) Постройте график закона Ципфа для каждой книги
+   по-отдельности. Подсказка: пример есть в [книге о tidyverse](https://www.tidytextmining.com/tfidf.html#zipfs-law).
+   
+```{r}
+vv.tidy1 %>%
+    count(words, sort = TRUE) %>%
+    mutate(rank = row_number()) %>%
+    ggplot(aes(rank, n)) +
+    geom_line() +
+    scale_x_log10() +
+    scale_y_log10()
+
+vv.tidy2 %>%
+    count(words, sort = TRUE) %>%
+    mutate(rank = row_number()) %>%
+    ggplot(aes(rank, n)) +
+    geom_line() +
+    scale_x_log10() +
+    scale_y_log10()
+```
+ 
+Что вы можете сказать? Отличаются ли облака?   
+
+## Стилометрия
+
+Правда ли, что стоп-слова совсем не информативны и их всегда нужно
+выкидывать? 
+
+Посмотрим на разницу в употреблении личных местоимений:
+
+```{r}
+pers.pronouns = c("я", "меня", "мне",
+                   "мы", "нас", "нам",
+                   "ты", "тебя", "тебе",
+                   "вы", "вас", "вам",
+                   "он", "его", "него", "ему", "нем",
+                   "она", "ее", "нее", "ей", "ней",
+                   "они", "их", "них", "им", "ним", "ими", "ними")
+pronouns.df = data.frame(words = pers.pronouns, stringsAsFactors = FALSE)
+pron.count = vv.tidy %>%
+    inner_join(pronouns.df) %>%
+    group_by(author) %>%
+    dplyr::count(words, sort=TRUE) 
+
+ggplot(data = pron.count) + 
+  geom_bar(aes(x=words, y = n, fill = author), stat = "identity", position = "dodge") +
+  scale_x_discrete(name ="Words",  limits=pers.pronouns)
+```
+
+## Широкий формат
+
+Длинный формат представления текстов удобен для подсчета частотностей
+и для интеграции с инструментами tidyverse. Но если мы хотим
+использовать тексты, например, для машинного обучения, нам нужно,
+чтобы каждому тексту соответствовал набор переменных, характеризующих
+его содержание. 
+
+Широкий формат представления текстов используется так широко, что
+имеет собственное название — *матрица документов-термов*. Каждая строка
+матрицы — текст, каждому возможному слову соответствует колонка, а в
+качестве значения используется частотность слова в данном тексте.
+
+В пакете tidyverse есть набор функций cast_* для преобразования длинного
+формата в широкий. 
+
+Оставим только стоп-слова:
+
+```{r}
+vv.stop = vv.tidy %>%
+    inner_join(rustopwords)
+```
+
+Построим матрицу документов-термов для нескольких самых частотных слов
+в наших книгах:
+
+```{r}
+books.dtm = vv.stop %>%
+    group_by(book) %>%
+    dplyr::count(words, sort = TRUE)
+
+cast_sparse(books.dtm, book, words, n)
+```
+
+Используем для стилометрии. Чтобы нарисовать на двумерном графике представление по осям, соответствующим всем нашим местоимениям, будем использовать анализ главных компонент ("собирать" оси в более крупные компоненты)
+
+```{r}
+pron.dtm = vv.tidy %>%
+    inner_join(pronouns.df) %>%
+    group_by(book) %>%
+    dplyr::count(words, sort=TRUE) %>%
+    cast_sparse(book, words, n)
+
+pron.pca = prcomp(pron.dtm)
+ggbiplot::ggbiplot(pron.pca, labels = rownames(pron.dtm))
+```
+
+## Автоматический анализ содержания текста
+
+Таким образом по частотному распределению самых
+распространенных слов можно автоматически различать стиль разных
+авторов. Если же рассмотреть частотное распределение знаменательных
+слов (прежде всего — существительных), можно автоматически различать
+тексты разной тематики.
+
+## Векторное представление документов
+
+Мы с ним уже встречались: это то же самое, что и данные в широком
+формате, и то же самое, что и матрица термов-документов. Каждый
+документ можно представить как вектор в многомерном пространстве. 
+
+```{r}
+text1 = c("я" = 1, "облака" = 1, "фиолетовая" = 1, "вата" = 1,
+          "розовые" = 0, "мечтал" = 0, "долго" = 0,
+          "прости" = 0, "малая" = 0, "мне" = 0, "надоело" = 0)
+
+text2 = c("я" = 1, "облака" = 1, "фиолетовая" = 0, "вата" = 0,
+          "розовые" = 1, "мечтал" = 1, "долго" = 1,
+          "прости" = 0, "малая" = 0, "мне" = 0, "надоело" = 0)
+
+text3 = c("я" = 1, "облака" = 0, "фиолетовая" = 0, "вата" = 0,
+          "розовые" = 0, "мечтал" = 0, "долго" = 0, 
+          "прости" = 1, "малая" = 1, "мне" = 1, "надоело" = 1)
+
+test_tdm = rbind(text1, text2, text3) # матрица термов-документов
+```
+
+Теперь мы можем сравнить не только отдельные слова, но и тексты,
+сравнив соответствующие им вектора. В качестве меры близости мы будем
+использовать косинус угла между векторами. 
+
+```{r}
+lsa::cosine(text1, text2)
+
+```
+
+Какая пара текстов похожа больше всего?
+
+```{r}
+lsa::cosine(t(test_tdm))
+```
+
+## Нормализованная частотность. TF-IDF
+
+Для анализа документов по содержанию не все слова одинаково
+полезны. Самые бесполезные — те, которые встречаются слишком часто
+(вне зависимости от тематики) и hapax legomena. Для различения
+документов полезнее всего слова из середины частотного
+распределения. Чтобы повысить вес таких слов и понизить вес остальных,
+придумали взвешенную частотность — TF-IDF. 
+
+* TF — term frequency (частота слова в документе) 
+* IDF — inverse documemnt frequency (обратная документная частота:
+  логарифм отношения количества документов в коллекции к числу
+  документов, в которых встречается данное слово)
+
+Сейчас мы научимся считать эту метрику на текстах из датасета с реальными отзывами на отели Санкт-Петербурга с сайта TripAdviser!
+
+## Подготовка данных
+
+Прежде чем приступать к анализу, нам нужно подготовить векторное
+представление документов. 
+
+Загрузим данные и токенизируем тексты отзывов к отелям Санкт-Петербурга. Преобразуем их в длинный формат.
+
+**Лемматизация** Если мы интересуемся содержанием, нам нужно считать разные формы
+слова одной и той же единицей. Для этого применяется лемматизация —
+автоматическое приведение слова к начальной форме. Мы провели эту
+операцию над текстами заранее с помощью программы [mystem](https://tech.yandex.ru/mystem/).
+
+```{r}
+reviews = read_csv("~/shared/minor2_2018/2-tm-net/lab03-tm/reviews.csv")  
+# в колонке lem лемматизированные отзывы + нет пунктуации и чисел
+
+reviews.tidy = reviews %>%    
+  select(id, lem) %>% 
+  unnest_tokens(words, lem)
+```
+
+Удалим стоп-слова, а также слишком редкие слова по порогу.
+
+```{r}
+rustopwords = data.frame(words=stopwords::stopwords("ru"), stringsAsFactors=FALSE) 
+# словарь со стоп-словами
+
+reviews.tidy = reviews.tidy %>%
+  anti_join(rustopwords)
+
+words_count = reviews.tidy %>% 
+  dplyr::count(words) 
+
+words_count %>% 
+  ggplot() + 
+  geom_histogram(aes(x = n)) + 
+  theme_bw()
+
+#сколько слов встречается в текстах всего один раз?
+quantile(words_count$n, 0.55)
+quantile(words_count$n, 0.65)
+
+#удалим слишком редкие и наоборот, слишком распространенные
+words_count = words_count %>% 
+  filter(n > 5 & n < quantile(words_count$n, 0.95))
+
+reviews.tidy = reviews.tidy %>% 
+  filter(words %in% words_count$words)
+```
+
+После всей чистки у нас осталось сильно меньше слов, чем было изначально. Поэтому от некоторых отзывов могло или совсем ничего или пара слов. Уберем такие отзывы из базы для дальнейшего анализа. 
+
+```{r}
+# удалить отзывы от которых осталось мало слов
+reviews_count = reviews.tidy %>%
+    dplyr::count(id) %>%
+    filter(n > 5) 
+
+# для оставшихся отзывов посчитаем метрику TF-IDF
+reviews_tf_idf = reviews.tidy %>%
+    filter(id %in% reviews_count$id) %>%
+    dplyr::count(id, words) %>%
+    bind_tf_idf(words, id, n)
+
+# приведем данные к широкому формату. создадим term-document matrix
+library(tidyr)
+reviews.tdm = reviews_tf_idf %>%
+    dplyr::select(id, words, tf_idf) %>%
+    spread(words, tf_idf, fill = 0) 
+```
+
+Посчитаем косинусное расстояние между двумя векторами отзывов. Эти два текста наиболее похожи друг на друга.
+
+```{r}
+#посмотреть сами тексты отзывов
+reviews$review[reviews$id == "rn308356496"]
+reviews$review[reviews$id == "rn249258173"]
+
+review1 = reviews.tdm %>%
+    filter(id == "rn308356496") %>%
+    dplyr::select(-id) %>%
+    as.numeric()
+
+review2 = reviews.tdm %>%
+    filter(id == "rn249258173") %>%
+    dplyr::select(-id) %>% 
+    as.numeric()
+
+lsa::cosine(review1, review2)
+```
+
+**Ваша очередь:** 
+
+Давайте попробуем еще раз. Загрузите датасет, в котором содержатся посты из пабликов "Медиазона" и "Комсомольская правда".
+
+```{r}
+library(readr)
+media = read_csv("~/shared/minor2_2018/2-tm-net/lab03-tm/media.csv")
+
+media$media = media$media %>% str_replace("_.+", "")
+
+pers.pronouns = c("они", "мы", "он", "она", "я", "вы")
+pronouns.df = data.frame(words = pers.pronouns, stringsAsFactors = FALSE)
+```
+
+1. Посмотрите, как отличается использование некоторых местоимений в этих постах.
+Есть ли разница в использовании местоимений?
+```{r}
+media.tidy = media %>% unnest_tokens(words, text)
+
+media.tidy.pers = media.tidy %>% filter(words %in% pers.pronouns)
+
+words_count = media.tidy.pers %>% group_by(media) %>% 
+  dplyr::count(words)
+
+words_count %>% cast_sparse(media, words, n)
+```
+
+
+
+2. С помощью косинусных расстояний оцените, насколько отличаются тексты по содержанию. Найдите несколько примеров сильно похожих и отличающихся текстов.
+```{r}
+
+```
+

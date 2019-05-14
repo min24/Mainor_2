@@ -1,0 +1,57 @@
+```{r}
+library(tidyverse)
+
+movies <- read_csv("~/shared/minor2_2018/data/movies_cut.csv")
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
+movies = movies %>% dplyr::select(title, movie_id, genres, popularity, tagline)
+data = ratings %>% group_by(movie_id) %>% summarize(rating = mean(rating, na.rm = T))
+data = inner_join(data, movies)
+data = data %>% mutate(digitsTitle = str_detect(data$title, "[0-9]"))
+data = data %>% mutate(tlLength = str_length(data$tagline))
+library(tidyr)
+source("~/shared/minor2_2018/2-tm-net/extract_json.R") 
+
+data = extract_json(df = data, col = "genres")
+data = data %>% dplyr::select(-tagline, -title, -genres)
+rownames(data) = data$movie_id
+data = data %>% dplyr::select(-movie_id)
+sim = lsa::cosine(t(as.matrix(data)))
+mostSimilar = max(sim[,"4488"], na.rm = T)
+a = which(sim[,"4488"] == mostSimilar, arr.ind = TRUE)
+a
+rownames(sim)[a]
+names(a)
+diag(sim) = 0
+mostSimilar = max(sim[,"4488"], na.rm = T)
+a = which(sim[,"4488"] == mostSimilar, arr.ind = TRUE)
+names(a)
+mostSimilar
+user = ratings %>% filter(customer_id == 111343 & rating == 5)
+user
+user$movie_id
+mostSimilar = max(sim[,as.character(user$movie_id)], na.rm = T)
+a = which(sim[,as.character(user$movie_id)] == mostSimilar, arr.ind = TRUE)
+names(a)
+filter(movies,movie_id == 3860) %>% select(title)
+mostSimilar = head(sort(sim[,as.character(user$movie_id)], decreasing = T), n = 5)
+mostSimilar
+result = names(mostSimilar)
+filter(movies,movie_id %in% result) %>% dplyr::select(title)
+userId = 2413408
+user = ratings %>% filter(customer_id == userId & rating == 5)
+user$movie_id
+mostSimilar = max(sim[,as.character(user$movie_id)], na.rm = T)
+a = which(sim[,as.character(user$movie_id)] == mostSimilar, arr.ind = TRUE)
+a
+result = rownames(a)
+filter(movies,movie_id %in% result) %>% dplyr::select(title)
+mostSimilar = head(sort(sim[,as.character(user$movie_id)], decreasing = T), n = 5)
+mostSimilar
+a = which(sim[,as.character(user$movie_id)] %in% mostSimilar, arr.ind = TRUE)
+a ## выдается результат "общим" индексом, а не строки-столбцы, нам нужны строки
+rows = a %% dim(sim)[1]
+rows
+result = rownames(sim)[rows]
+result
+filter(movies,movie_id %in% result) %>% dplyr::select(title, movie_id)
+```

@@ -1,0 +1,120 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+### Создание сети друзей
+
+Для создания своей сети друзей в ВК необходимо перейти по следующей ссылке http://wardoctor.nosoc.io/public/paulokopny/vkauth/karepin.html и авторизовать (authorize) приложение.
+
+После авторизации вы получите код, который необходимо скопировать ниже (в строчку code = "<здесь ваш код>"). Если у вас нет профиля ВК, не заполняйте это поле (code = ""), тогда будет отображен тестовый пример.
+
+*Рекомендация:* запустите сначала отдельно код из первого чанка (в консоли отобразится строка с процентами загрузки данных), а только потом создавайте (кнопка Knit) файл html.
+
+```{r}
+library(igraph)
+library(devtools)
+#do not forget to insert your code if you run this first time!!!
+
+code = "bac18b11d8272b9da5"
+
+#If we already have data, we just load it from file, otherwise we download it from VK.
+
+if (file.exists("~/graph_info.RData")){
+  print("Upload existed file")
+  load("~/graph_info.RData")
+} else if(code == ""){ 
+  print("No code provided upload dummy set")
+  load("~/shared/minor2_2018/2-tm-net/lab01-netIntro/graph_infoUK.RData")
+  save(graph.info, file = "~/graph_info.RData")
+} else {
+  source("~/shared/minor2_2018/2-tm-net/lab01-netIntro/my_vk_graph.R")
+  graph.info = get_friends_graph(code)
+  save(graph.info, file = "~/graph_info.RData")
+}
+```
+
+Создадим граф из списка ребер, удалим множественные ребра. 
+
+```{r}
+ego.graph = graph.data.frame(graph.info$el, directed = F)
+ego.graph = simplify(ego.graph)
+
+```
+
+Подпишем имена узлов в соответствии с именами друзей в ВК.
+
+```{r, warning=FALSE, message=FALSE}
+graph.names = as.character(V(ego.graph)$name)
+info = graph.info$info
+info$uid = info$id
+info$uid = as.character(info$uid)
+info = dplyr::filter(info, uid %in% graph.names)
+info = dplyr::left_join(data.frame(uid = graph.names), info)
+fullname = info$fullname
+
+fullname
+V(ego.graph)$name = fullname
+head(sort(degree(ego.graph), decreasing = T))
+head(sort(betweenness(ego.graph), decreasing = T))
+```
+
+Зададим размер вершин в соответствии с одной из мер центральности (поговорим об этом на следующих занятиях)
+
+```{r}
+E(ego.graph)$width = 1
+size.b = betweenness(ego.graph)
+V(ego.graph)$size = log(size.b+1)+1
+
+#Next line allow as to put names only on top 5% of your friends based on their centrality.
+V(ego.graph)$name = ifelse((V(ego.graph)$size > quantile(V(ego.graph)$size, 0.95)), fullname, NA)
+
+membership = membership(edge.betweenness.community(ego.graph))
+
+membershipFG = membership(cluster_fast_greedy(ego.graph))
+
+?cluster_edge_betweenness
+
+?cluster_fast_greedy
+
+?cluster_walktrap
+#names(membership) = fullname
+```
+
+```{r, dpi=100, fig.height=7, fig.width=7}
+par(mar = c(0,0,0,0))
+
+plot(ego.graph, layout = layout.fruchterman.reingold, edge.arrow.size = 0, vertex.color = membership, margin = -0.1)
+```
+
+```{r, dpi=100, fig.height=7, fig.width=7}
+plot(ego.graph, layout = layout.fruchterman.reingold, edge.arrow.size = 0, vertex.color = membershipFG, margin = -0.1)
+
+```
+
+
+Следующая часть кода преобразует граф, и рисует его интерактивным.
+
+```{r}
+# https://datastorm-open.github.io/visNetwork/
+library(visNetwork)
+
+fullname[duplicated(fullname)] = stringr::str_c(fullname[duplicated(fullname)], 1:length(fullname[duplicated(fullname)]))
+
+V(ego.graph)$name = fullname
+
+# конвертируем данные из формата igraph в формат visNetwork
+ego.graph2 <- toVisNetworkData(ego.graph)
+
+# задем цвет узлов
+ego.graph2$nodes$color = RColorBrewer::brewer.pal(12, "Paired")[membership]
+
+# задаем размер узлов
+ego.graph2$nodes$size = scales::rescale(ego.graph2$nodes$size^2, to = c(1, 50))
+
+# подписи при наведении
+ego.graph2$nodes$title = ego.graph2$nodes$label
+
+visNetwork(nodes = ego.graph2$nodes, edges = ego.graph2$edges, height = "500px") %>% 
+  visIgraphLayout()
+```

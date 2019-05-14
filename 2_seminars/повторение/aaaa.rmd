@@ -1,0 +1,119 @@
+```{r}
+library(MASS)
+data(cats)
+?cats
+```
+
+```{r}
+t.test(cats$Bwt, mu=5)
+```
+
+```{r}
+artists = read.csv("https://stepik.org/media/attachments/lesson/202688/artist3.csv")
+artworks = read.csv("https://stepik.org/media/attachments/lesson/202688/artwork3.csv")
+
+install.packages('dplyr')
+library(dplyr)
+```
+```{r}
+artists_f = artists %>% dplyr::filter(!is.na(Gender) & Gender == 'Male')
+
+art_f = artworks %>% dplyr::filter(!is.na(Gender) & Gender == 'Male')
+
+a = artists_f %>% select(Artist.ID)
+b = art_f %>% select(Artwork.ID)
+e = c(artists_f$Artist.ID, art_f$Artwork.ID)
+f = unique(e)
+a = as.vector(a)
+b = as.vector(b)
+c = c(a,b)
+d = unique(c)
+count(d)
+```
+```{r}
+install.packages('lubridate')
+library(lubridate)
+```
+
+
+```{r}
+artworks = read.csv("https://stepik.org/media/attachments/lesson/202688/artwork3.csv")
+
+artworks$Acquisition.Date = ymd(artworks$Acquisition.Date)
+artworks$year = year(artworks$Acquisition.Date)
+artworks = artworks %>% filter(year == 2000)
+artworks$Acquisition.Date = month(artworks$Acquisition.Date, label = T)
+artworks %>% group_by(Acquisition.Date) %>% summarise(sale = n()) %>% arrange(sale)
+```
+
+```{r}
+install.packages('readr')
+install.packages('chisq.test')
+library(chisq.test)
+```
+
+```{r}
+#?????????????????? ??????????????
+library(readr) 
+kickstarter <- read_csv("https://stepik.org/media/attachments/lesson/66539/kickstarter.csv")
+```
+
+```{r}
+ch = chisq.test(kickstarter$main_category, kickstarter$state)
+ch
+```
+
+
+
+
+
+
+```{r}
+movies = read.csv("https://stepik.org/media/attachments/lesson/202688/movie_data.csv")
+movies %>% filter(length > 120) %>% group_by(genre) %>% summarise(count = n()) %>% arrange(-count)
+```
+
+```{r}
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+
+ted_main <- read_csv("https://stepik.org/media/attachments/lesson/202688/ted_main.csv")
+ted_main$year <- year(as_datetime(ted_main$film_date))
+```
+```{r}
+ted_main = ted_main %>% filter(year>2010)
+ted_main %>% group_by(year) %>% ggplot()+
+  geom_boxplot(data = ted_main, aes(y = log(comments), x = year))+
+  facet_grid(~year)+
+  xlab('Year')+
+  ylab('Comments')
+  
+```
+
+
+
+```{r}
+library(readr)
+acs2015_county_data <- read_csv("https://stepik.org/media/attachments/lesson/202688/acs2015_county_data.csv")
+
+state = acs2015_county_data %>% filter(State %in% c('Alabama'))
+mean(state$Income)
+```
+
+```{r}
+iris = datasets::iris # ?????????????????? ??????????????
+install.packages('rpart')
+install.packages('prp')
+install.packages('rpart.plot')
+library(rpart)
+library(rpart.plot)
+library(prp)
+```
+
+
+```{r}
+tree = rpart(Sepal.Length ~., data = iris)
+prp(tree)
+```
+

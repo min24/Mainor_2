@@ -1,0 +1,447 @@
+---
+title: "Lab 12: Статистические тесты"
+---
+
+**Сегодня диктант на степике!**
+Курс: https://stepik.org/course/48420/syllabus
+Приглашение для тех, кто еще не присоединился: https://stepik.org/invitation/03f310a9f966907113a0975e446972f9b1be1e55/
+
+### Формулирование и проверка гипотез
+
+Гипотезы: 
+
+- **нулевая** ($H_0$), которая проверяется на правильность (отвергает начиличие эффекта)
+
+- **альтернативная** ($H_A$), отвергающая нулевую 
+
+После того как гипотезы сформулированы, необходимо выбрать **уровень значимости** -- ($\alpha$ -- допустимая вероятность *ошибочно* отклонить *истинную* $H_0$). 
+
+[Различие нулевой и альтернативной гипотез с примерами](https://www.thoughtco.com/null-hypothesis-vs-alternative-hypothesis-3126413)
+
+*Дополнительно*: 
+
+- [про независимые и зависимые переменные](https://www.thoughtco.com/i-ndpendent-and-dependent-variables-differences-606115)
+
+- [про уровень значимости](http://www.machinelearning.ru/wiki/index.php?title=%D0%A3%D1%80%D0%BE%D0%B2%D0%B5%D0%BD%D1%8C_%D0%B7%D0%BD%D0%B0%D1%87%D0%B8%D0%BC%D0%BE%D1%81%D1%82%D0%B8)
+
+### P-value
+
+**P-value** -- вероятность получить такой же результат, как есть в данных, или еще больший, **при условии, что нуль-гипотеза верна**. 
+
+Как интерпретировать и как **не** интерпретировать [p-значение](http://blog.minitab.com/blog/adventures-in-statistics-2/how-to-correctly-interpret-p-values)
+
+https://xkcd.com/882/
+
+Не забываем загружать пакеты, которые нужны для работы  
+  
+```{r}
+library(ggplot2)
+library(dplyr)
+library(readr)
+```
+
+### По мотивам лекции
+
+Загрузим данные про оценки по математике и социологии для экономистов и социологов (+ перцентиль в соответствующем рейтинге, нормированная оценка, специальность и запись на майнор)
+
+```{r, results='asis'}
+rates = read_csv("~/shared/minor2_2018/1-intro/lab12-stat_tests/rates.csv")
+```
+
+Посмотрим на разницу в оценках по графикам. Что можно сказать?
+
+```{r}
+ggplot(rates) +
+  geom_boxplot(aes(x=Major, y=Soc))
+
+ggplot(rates) +
+  geom_boxplot(aes(x=Major, y=Math))
+
+```
+
+Вычислим разность средних оценок явным образом (для отличия от лекции -- по математике)
+
+```{r}
+All_means = rates %>% 
+  group_by(Major) %>%
+  summarize(
+    Math.observed = mean(Math), 
+    Soc.observed = mean(Soc), 
+    s = sum(abs)
+  )
+
+All_means
+diff.observed = All_means$Math.observed[1] - All_means$Math.observed[2]
+diff.observed
+```
+```{r}
+muta
+```
+
+
+Можем ли мы сказать велика ли разница?
+
+### Гипотеза
+
+Попробуем понять, есть какая-то закономерность приводящая к разнице оценок, или это всего лишь случайность.
+
+1. Сформулируем наш вопрос на языке статистики (то есть определим $H_0$ и $H_A$)
+    - Например: $H_0:$ Средняя оценка по математике одинаковая для экономистов и социологов; $H_A:$ Средние оценки различаются.
+2. Выберем уровень значимости ($\alpha$ -- допустимая вероятность **ошибочно** отклонить **истинную** $H_0$)
+3. Определим подходящую к нашим данным статистику и вычислим ее.
+4. Проверим, достаточно ли у нас оснований отклонить нулевую гипотезу (для выбранного значения $\alpha$)
+5. Сформулируем наши выводы на "человеческом" языке.
+
+## t-критерий
+- если мы хотим сравнить средние значения в двух группах
+
+Предположения t-критерия:
+
+* нормально распределенные данные в выборке (что это значит?)
+* данные независимые, одинаково распределенные
+* для некоторых вариантов критерия -- еще и предположения о равенстве дисперсий
+
+Сравним положение в рейтинге у записавшихся и не записавшихся на DS майнор. 
+
+**При тестировании мы предполагаем, что нуль-гипотеза истинна.**
+
+```{r}
+ggplot(data = rates) + 
+  geom_boxplot(aes(x = DS_minor, y = abs))
+
+# формула выглядит знакомой? 
+
+t.test(abs ~ DS_minor, data = rates)
+
+?t.test
+```
+
+* Какой вывод можно сделать?
+
+## С какими параметрами связана цена жилья
+
+Переходим к данным с ценами на жилье. Сначала загрузим данные [House Pricing](https://www.kaggle.com/c/house-prices-advanced-regression-techniques/data)
+
+```{r}
+housing = read_csv("~/shared/minor2_2018/1-intro/data/housing.csv")
+```
+Описание остальных переменных можно найти на Kaggle
+
+Оставим для работы сегодня несколько переменных (чтобы не "тащить" все 81). Переменные перечислены ниже.
+  * SalePrice - the property's sale price in dollars.
+  * LotArea: Lot size in square feet
+  * Utilities: Type of utilities available
+  * Neighborhood: Physical locations within Ames city limits
+  * OverallCond: Overall condition rating
+  * YearBuilt: Original construction date
+  * CentralAir: Central air conditioning
+  * GarageFinish: Interior finish of the garage
+  * GarageCars: Size of garage in car capacity
+  * PoolArea: Pool area in square feet
+  * HeatingQC: Heating quality and condition
+  
+```{r}
+#colnames(housing)
+housing = housing %>% 
+  dplyr::select(SalePrice, OverallCond, Neighborhood, Utilities, 
+         LotArea, YearBuilt, CentralAir, GarageFinish, 
+         GarageCars, PoolQC, HeatingQC)
+```
+
+Посмотрим на данные
+```{r}
+str(housing, max.level = 1)
+```
+
+В частности, переменные Utilities (удобства) и PoolQC (бассейн) нам не очень интересны -- практически везде есть все удобства и почти нигде нет бассейна
+
+Для более удобной работы выразим цену в тысячах
+
+```{r}
+housing = housing %>% 
+  mutate(SalePrice = SalePrice/1000)
+```
+
+А теперь начнем исследовать, какие же параметры взаимосвязаны с ценой. Сначала очевидный параметр -- площадь. Создадим новую переменную, отражающую дома с площадью меньше и больше 10000
+
+```{r}
+housing = housing %>% 
+  mutate(area10000 = ifelse(LotArea > 10000, "More 10000", "Less 10000"))
+```
+
+А теперь сравниваем средние
+
+```{r}
+ggplot(housing) + geom_boxplot(aes(x = area10000, y = SalePrice))
+
+t.test(SalePrice ~ area10000, data = housing)
+```
+
+## Ваша очередь
+
+Сравните цену на жилье по следующим параметрам
+
+* Хорошее vs плохое состояние жилья. Хорошим состоянием считаем параметр `OverallCond` больше 5 (т.е. 10: Very Excellent, 9:	Excellent, 8:	Very Good, 7:	Good, 6: Above Average -- см. описание) 
+
+```{r}
+x = housing$OverallCond
+housing$quality_cond = ifelse(x <= 5, "bad", ifelse(x==6, "Above Average", ifelse(x==7, "Good", ifelse(x==8, "Very Good", ifelse(x==9, "Excellent", "Very Excellent"))))) 
+
+ggplot(housing) + 
+  geom_boxplot(aes(quality_cond, SalePrice))
+
+housing$quality_cond2 = ifelse(x>5, "good", "bad")
+t.test(SalePrice ~ quality_cond2, data = housing)
+
+```
+
+* Построено раньше 1970 vs позже 1970 (параметр `YearBuilt`)
+
+```{r}
+housing$year_cond = ifelse(housing$YearBuilt<1970, "old", "new")
+
+ggplot(housing) + 
+  geom_boxplot(aes(year_cond, SalePrice))
+
+t.test(SalePrice ~ year_cond, data = housing)
+```
+
+* Построено с 1960 по 1970 vs с 1970 по 1980 (параметр `YearBuilt`)
+
+```{r}
+#немного поможем с преобразованиями
+housing2 = housing %>% 
+  filter(YearBuilt > 1960 & YearBuilt <= 1980) %>% 
+  mutate(year1970 = ifelse(YearBuilt > 1970, ">1970", "<1970"))
+
+ggplot(housing2) + 
+  geom_boxplot(aes(year1970, SalePrice))
+
+t.test(SalePrice ~ year1970, data = housing2)
+
+```
+
+* Есть центральная вентиляция vs нет (`CentralAir`)
+
+```{r}
+ggplot(housing) + 
+  geom_boxplot(aes(CentralAir, SalePrice))
+
+t.test(SalePrice ~ CeltralAir, data = housing)
+
+```
+
+* Есть гараж vs нет. Смотрим по переменной `GarageFinish`: если ее значение NA, то гаража нет. Проверить можно с помощью `is.na(housing$GarageFinish)`
+
+```{r}
+housing$garage_cond = ifelse(!is.na(housing$GarageFinish), "yes", "no")
+
+ggplot(housing) + 
+  geom_boxplot(aes(garage_cond, SalePrice))
+
+t.test(SalePrice ~ garage_cond, data = housing)
+
+```
+
+* Для тех домов, где есть гараж, по его размеру: помещается 2 машины и больше vs меньше двух машин (`GarageCars`)
+
+```{r}
+housing3 = housing %>% filter(GarageCars>0) %>% mutate(gara_2 = ifelse(GarageCars<2, "<2", ">2"))
+ggplot(housing3) + 
+  geom_boxplot(aes(gara_2, SalePrice))
+
+t.test(SalePrice ~ gara_2, data = housing3)
+
+```
+
+* Район OldTown vs Edwards (`Neighborhood`)
+
+```{r}
+housing4 = housing %>% filter(Neighborhood %in% c("OldTown", "Edwards"))
+
+ggplot(housing4) + 
+  geom_boxplot(aes(Neighborhood, SalePrice))
+
+t.test(SalePrice ~ Neighborhood, data = housing4)
+
+
+```
+
+* ... Ваши варианты вопросов
+
+```{r}
+
+```
+
+## Хи-квадрат
+* А если нам нужно сравнить не две группы по значению метрической переменной? А выяснить взаимосвязь между двумя категориальными?
+
+Есть ли взаимсовязь между выбором майнора и специальностью? Другими словами, влияет ли специальность на выбор майнора?
+
+```{r}
+table(rates$Major, rates$DS_minor)
+```
+
+Формальные результаты теста
+```{r}
+ch = chisq.test(rates$Major, rates$DS_minor)
+ch
+```
+
+* Выводы?
+
+Наблюдаемые и ожидаемые значения
+```{r}
+ch$observed
+ch$expected
+```
+
+Таблица Пирсоновских остатков 
+```{r}
+ch$residuals
+```
+
+Отклонения от ожидаемого
+```{r}
+library(vcd)
+assoc(table(rates$Major, rates$DS_minor), gp=shading_max, 
+      rot_labels = c(0, 0, 0, 0), 
+      rot_varnames = c(0, 0, 0, 0))
+```
+
+Или же все вместе на одном графике (полезно, если таблицы больше, чем на 2 на 2)
+
+```{r, fig.align='center', fig.height=6, fig.width=10}
+df_resid = as.data.frame(ch$residuals)
+df_resid
+df_count = as.data.frame(ch$observed)
+df_count
+
+ggplot() + 
+  geom_raster(data = df_resid, aes(x = rates.Major, y = rates.DS_minor, fill = Freq), hjust = 0.5, vjust = 0.5) + 
+  scale_fill_gradient2("Pearson residuals", low = "#b2182b", mid = "#f7f7f7", high = "#2166ac", midpoint = 0) +
+  geom_text(data = df_count, aes(x = rates.Major, y = rates.DS_minor, label = Freq)) +
+  xlab("Major") +
+  ylab("DS Minor") +
+  theme_bw()
+```
+
+Итак, вернемся к домохозяйствам. Данные снова[House Pricing](https://www.kaggle.com/c/house-prices-advanced-regression-techniques/data)
+
+Посмотрим на взаимосвязь качества отопления и годом постройки (ранее 1950). В данных всего один дом с очень плохим отоплением, поэтому уберем его перед сравнением
+
+```{r}
+#housing = read_csv("~/shared/minor2_2018/1-intro/data/housing.csv")
+#housing = housing %>% select(SalePrice, OverallCond, Neighborhood, Utilities, LotArea, YearBuilt, CentralAir, GarageFinish, GarageCars, PoolQC, HeatingQC)
+
+housing2 = housing %>% 
+  mutate(year1950 = ifelse(YearBuilt > 1950, ">1950", "<1950")) %>% 
+  filter(HeatingQC != "Po")
+
+ch = chisq.test(housing2$HeatingQC, housing2$year1950)
+ch
+```
+
+Нарисуем на графике
+
+```{r}
+df_resid = as.data.frame(ch$residuals)
+df_resid
+df_count = as.data.frame(ch$observed)
+df_count
+
+ggplot() + 
+  geom_raster(data = df_resid, aes(x = housing2.HeatingQC, y = housing2.year1950, fill = Freq), hjust = 0.5, vjust = 0.5) + 
+  scale_fill_gradient2("Pearson residuals", low = "#b2182b", mid = "#f7f7f7", high = "#2166ac", midpoint = 0) +
+  geom_text(data = df_count, aes(x = housing2.HeatingQC, y = housing2.year1950, label = Freq)) +
+  xlab("Heating") +
+  ylab("Year >1950") +
+  theme_bw()
+```
+
+Выводы?
+
+
+## Ваша очередь
+
+Выявите, есть ли следующие взаимосвязи
+
+* Цена жилья и состояние жилья: хорошее vs плохое. Хорошим состоянием считаем параметр `OverallCond` больше 5 (т.е. 10: Very Excellent, 9:	Excellent, 8:	Very Good, 7:	Good, 6: Above Average -- см. описание) 
+
+```{r}
+
+```
+
+* Наличие гаража и состояние жилья
+
+```{r}
+
+```
+
+* Цена жилья и район (Район OldTown vs Edwards)
+
+```{r}
+
+```
+
+* Район и год постройки ранее 1970  (параметр `YearBuilt`)
+
+```{r}
+
+```
+
+* Цена жилья и год постройки ранее 1970  (параметр `YearBuilt`)
+
+```{r}
+
+```
+
+* Наличие центральной вентиляции и цена жилья (`CentralAir`)
+
+```{r}
+
+```
+
+* Наличие центральной вентиляции и год постройки ранее 1970 (`CentralAir`)
+
+```{r}
+
+```
+
+* Наличие гаража и цена жилья
+
+```{r}
+
+```
+
+* ... Ваши варианты вопросов
+
+```{r}
+
+```
+
+
+
+## Дополнительные задания
+
+Загрузите базу по колледжам
+
+```{r}
+colleges = ISLR::College
+?ISLR::College
+```
+
+Ответьте на вопросы, используя подходящие тесты. Обратите внимание, что для ответа на некоторые вопросы недостаточно исходных переменных, а нужно их преобразовать (посчитать доли, разделить на группы и т.д.)
+
+* Есть ли взаимосвязь между числом подаваемых в колледж заявлений и его типом (частный - государственный)
+* Отличаются ли частные и государственные колледжи по доле принятых заявлений
+* Есть ли взаимосвязь между тем, что доля принятых заявлений составляет более 75%, и типом колледжа
+* Есть ли взаимосвязь между числом студентов-бакалавров (F.Undergrad + P.Undergrad) и типом колледжа
+* Отличаются ли частные и государственные колледжи по числу выпускников, оказывающих помощь (perc.alumni)
+* Есть ли взаимосвязь между тем, что доля окончивших колледж (Grad.Rate) составляет более 50%, и его типом 
+* Есть ли взаимосвязь между тем, что на одного сотрудника приходится больше 15 студентов (S.F.Ratio), и типом колледжа
+* Есть ли взаимосвязь между уровнем расходов на книги (Books) и типом колледжа
+* Есть ли взаимосвязь между тем, что доля сотрудников с PhD составляет более 75%, и типом колледжа
+* Разделите колледжи на 4 группы по доле принятых заявлений: 1) менее 65%, 2) от 65% до 75%, 3) от 75% до 85%, 4) более 85%. Есть ли взаимосвязь между принадлежностью к группе и типом колледжа
+
+* ... Ваши варианты вопросов

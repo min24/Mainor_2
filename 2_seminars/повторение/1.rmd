@@ -1,0 +1,18 @@
+
+```{r}
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+
+ted_main <- read_csv("https://stepik.org/media/attachments/lesson/202688/ted_main.csv")
+ted_main$year <- year(as_datetime(ted_main$film_date))
+```
+```{r}
+ted_main = ted_main %>% filter(year>2010)
+ted_main %>% group_by(year) %>% ggplot()+
+  geom_boxplot(data = ted_main, aes(y = log(comments), x = year))+
+  facet_grid(~year)+
+  xlab('Year')+
+  ylab('Comments')
+  
+```

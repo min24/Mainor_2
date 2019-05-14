@@ -1,0 +1,86 @@
+---
+title: "kr2"
+author: "lnguen_1"
+date: "18 12 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+students = read_csv("~/shared/minor2_2018/data/students_1.csv")
+```
+```{r}
+library(dplyr)
+```
+1.
+```{r}
+students %>% group_by(romantic, grade) %>% summarise(count = n())
+```
+2.
+```{r}
+123/(123+140)
+63/(63+69)
+```
+3.
+```{r}
+library(rpart)
+library(rpart.plot)
+
+students = students %>% select(-id, -romantic)
+tree = rpart(grade~ ., data = students, method = "class")
+prp(tree)
+```
+4.
+```{r}
+pred = predict(tree, students, type = "class")
+tb = table(students$grade, pred)
+tb
+sum(diag(tb))/sum(tb)
+
+```
+
+5.
+```{r}
+prp(tree)
+rpart.plot(tree)
+# узел Fedu<3.5 имеет наибольшая точность 0.61
+students %>% filter(failures < 0.5) %>% nrow()
+# там есть 312 наблюдений
+```
+
+6.
+```{r}
+printcp(tree)
+
+tree2 = rpart(grade~ ., data = students, method = "class", control = rpart.control(cp = 10^-4))
+
+printcp(tree2)
+plotcp(tree2)
+plotcp(tree)
+```
+```{r}
+cp_tbl = printcp(tree2)
+
+cp_tbl %>%
+  as.data.frame() %>% 
+  arrange(xerror) %>% 
+  head(n = 1)
+```
+
+
+
+```{r}
+#cp new = 0.02688172
+tree3 = prune(tree2, cp = 0.02688172)
+
+pred3 = predict(tree3, students, type = "class")
+tb3 = table(students$grade, pred3)
+tb3
+sum(diag(tb3))/sum(tb3)
+```
+
+
+

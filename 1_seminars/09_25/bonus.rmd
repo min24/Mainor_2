@@ -1,0 +1,52 @@
+####Дополнительно:
+
+Загрузите базу заново.
+
+```{r eval = F}
+colleges = ISLR::College
+```
+
+Постройте график, чтобы сравнить каких колледжей в базе больше, частных или государственных
+
+
+```{r exe23}
+ggplot(data = colleges) + 
+  geom_bar(aes(x = Private))
+```
+
+
+Создайте новую колонку, отражающую, приходится ли на одного преподавателя больше 13 студентов или нет
+
+```{r exe24}
+colleges2 = mutate(colleges, S.F.ratio_13 = S.F.Ratio > 13)
+```
+
+
+Выберите колледжи, в которых суммарные затраты (Personal, Books, Room.Board) не превышают 6000. 
+
+```{r exe25}
+colleges2 %>%
+  mutate(sum_exp = Personal+ Books+ Room.Board)%>%
+  filter(sum_exp<=6000)
+```
+
+Сколько государственных колледжей в этой категории?
+
+```{r}
+
+table(colleges2$Private)
+
+colleges2 %>%
+  group_by(Private) %>%
+  summarise((count = n()))
+
+ggplot()+
+  geom_bar(data  = colleges2, aes(x = Private))
+```
+
+
+Сформулируйте свой вопрос по рассматриваемой базе. Выполните вычисления / постройте график для ответа на него.
+
+```{r final}
+
+```

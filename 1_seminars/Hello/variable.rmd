@@ -1,0 +1,17 @@
+toi ten la Duy
+
+```{r}
+x <- "Duy"
+y <- "Hello, "
+```
+
+```{r}
+
+```
+
+```{r}
+age <- c(23, 20, 21, 19, 20, 21, 20, 23)
+sex <- c("m", "m", "f", "f", "m", "f", "m", "f")
+data <- data.frame(age, sex)
+
+```

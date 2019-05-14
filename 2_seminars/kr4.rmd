@@ -1,0 +1,84 @@
+
+```{r}
+library(tidyverse) 
+library(tidytext) 
+library(stopwords) 
+stopwords("ru") 
+
+```
+
+```{r}
+overheard <- read_csv("~/shared/minor2_2018/data/overheard_spb.csv")
+
+overheard %>% unnest_tokens(words, Text) %>% dplyr::count(words, sort = TRUE) %>% filter(words == "день")
+
+overheard.tidy = overheard %>% unnest_tokens(words, Text) %>% dplyr::count(words, sort = TRUE) %>% anti_join(rustopwords)
+
+overheard.tidy = overheard.tidy %>% filter(n > quantile(n, 0.05) & n < quantile(n, 0.95))
+```
+
+
+```{r}
+overheard.tidy = overheard.tidy %>% filter(!str_detect(overheard.tidy$words, "[A-z]"))
+overheard.tidy = overheard.tidy %>% filter(!str_detect(overheard.tidy$words, "[[:digit:]]"))
+overheard1 = overheard %>% unnest_tokens(words, Text)
+overheard = overheard %>% unnest_tokens(words, Text) %>% dplyr::count(Likability, words)
+
+overheard = overheard %>% filter(words %in% overheard.tidy$words)
+```
+```{r}
+over_tf_idf = overheard %>% bind_tf_idf(words, Likability, n)
+
+over_tf_idf %>% filter(Likability == "Normal") %>% arrange(-tf_idf)
+```
+
+```{r}
+sentdict <- read.table("~/shared/minor2_2018/2-tm-net/lab04-sent_topics/sentdict.txt")
+
+overheard1 = overheard1 %>% filter(words %in% overheard$words) %>% select(Likability, words)
+
+over_sent = overheard1
+over_sent = over_sent %>% filter(words %in% sentdict$V1)
+over_sent$value = ifelse(over_sent$words %in% sentdict$V1, sentdict$V2)
+over_sent %>% dplyr::group_by(Likability) %>% dplyr::summarise(mean = mean(value))
+```
+
+```{r}
+class(over_sent$value)
+over_sent$value = as.numeric(over_sent$vavalue)
+over_sent %>% filter(Likability == "Unlikeable") %>% mean(value)
+over_sent %>% filter(Likability == "Normal") %>% mean(value)
+
+over_sent %>% filter(Likability == "Likeable") %>% mean(value)
+
+```
+
+
+
+
+
+```{r}
+overheard <- read_csv("~/shared/minor2_2018/data/overheard_spb.csv")
+
+overheard %>% unnest_tokens(words, Text) %>% dplyr::count(words, sort = TRUE) %>% filter(words == "день")
+
+overheard.tidy = overheard %>% unnest_tokens(words, Text) %>% dplyr::count(words, sort = TRUE) %>% anti_join(rustopwords)
+
+overheard.tidy = overheard.tidy %>% filter(n > quantile(n, 0.05) & n < quantile(n, 0.95))
+```
+
+```{r}
+overheard = overheard %>% unnest_tokens(words, Text) %>% dplyr::count(X1, words)
+overheard = overheard %>% filter(words %in% overheard.tidy$words)
+over.tdm = overheard %>%
+    spread(words, n, fill = 0)
+rownames(over.tdm) =  over.tdm$X1 
+
+rbc_test1 = over.tdm %>% filter(X1 == 1)
+rbc_test2 = over.tdm %>% filter(X1 == 17)
+
+test_tdm = rbind(rbc_test1, rbc_test2)
+
+lsa::cosine(rbc_test1, rbc_test2)
+```
+

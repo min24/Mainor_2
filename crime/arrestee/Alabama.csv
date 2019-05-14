@@ -1,0 +1,153 @@
+N,DATA_YEAR,ARRESTEE_ID,INCIDENT_ID,ARREST_DATE,MULTIPLE_INDICATOR,AGE_NUM,SEX_CODE,ARREST_TYPE_NAME,OFFENSE_NAME,CRIME_AGAINST,OFFENSE_CATEGORY_NAME,OFFENSE_GROUP,RACE_DESC,AGENCY_ID,NIBRS_MONTH_ID,SUBMISSION_DATE,INCIDENT_DATE,INCIDENT_HOUR
+1,2017,26263849,90114779,02-MAY-17,N,49,M,On View,Robbery,Property,Robbery,A,White,61,7588245,17-AUG-18,02-MAY-17,21
+2,2017,25676963,88430665,01-JAN-17,N,29,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,White,61,7492636,17-AUG-18,01-JAN-17,16
+3,2017,25677003,88430817,19-JAN-17,N,54,M,On View,Counterfeiting/Forgery,Property,Counterfeiting/Forgery,A,White,61,7492636,17-AUG-18,19-JAN-17,15
+4,2017,25677016,88430864,26-JAN-17,N,17,F,Taken INTO Custody,Shoplifting,Property,Larceny/Theft Offenses,A,White,61,7492636,17-AUG-18,26-JAN-17,13
+5,2017,26027448,89448478,08-MAR-17,N,43,F,On View,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,White,61,7550698,17-AUG-18,08-MAR-17,16
+6,2017,25677015,88430864,26-JAN-17,N,18,F,Taken INTO Custody,Shoplifting,Property,Larceny/Theft Offenses,A,White,61,7492636,17-AUG-18,26-JAN-17,13
+7,2017,25676975,88430721,08-JAN-17,N,31,M,On View,Robbery,Property,Robbery,A,White,61,7492636,17-AUG-18,08-JAN-17,16
+8,2017,25677008,88430825,21-JAN-17,N,42,F,On View,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,Black or African American,61,7492636,17-AUG-18,21-JAN-17,16
+9,2017,25676972,88430707,05-JAN-17,N,55,M,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7492636,17-AUG-18,05-JAN-17,15
+10,2017,26263935,90114993,20-MAY-17,N,30,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7588245,17-AUG-18,20-MAY-17,20
+11,2017,27740838,94738388,04-DEC-17,N,35,F,Taken INTO Custody,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7829046,20-AUG-18,04-DEC-17,15
+12,2017,27740825,94738364,03-DEC-17,N,34,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7829046,20-AUG-18,03-DEC-17,12
+13,2017,27082630,92555209,19-OCT-17,N,28,F,On View,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,White,61,7713473,17-AUG-18,19-OCT-17,18
+14,2017,27082629,92555209,19-OCT-17,N,28,M,On View,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,White,61,7713473,17-AUG-18,19-OCT-17,18
+15,2017,26915766,92050814,25-SEP-17,N,22,F,Taken INTO Custody,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,Black or African American,61,7686838,17-AUG-18,20-SEP-17,18
+16,2017,27082609,92555143,11-OCT-17,N,22,M,Taken INTO Custody,Burglary/Breaking & Entering,Property,Burglary/Breaking & Entering,A,White,61,7713473,17-AUG-18,11-OCT-17,6
+17,2017,27082654,92555272,27-OCT-17,N,25,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,White,61,7713473,17-AUG-18,27-OCT-17,18
+18,2017,27211282,92963436,20-NOV-17,N,36,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,White,61,7739502,17-AUG-18,20-NOV-17,16
+19,2017,26915692,92050606,03-SEP-17,N,20,M,On View,Robbery,Property,Robbery,A,Black or African American,61,7686838,17-AUG-18,02-SEP-17,22
+20,2017,26915693,92050606,03-SEP-17,N,18,M,Taken INTO Custody,Robbery,Property,Robbery,A,Black or African American,61,7686838,17-AUG-18,02-SEP-17,22
+21,2017,26915733,92050737,14-SEP-17,N,33,M,On View,Credit Card/Automated Teller Machine Fraud,Property,Fraud Offenses,A,White,61,7686838,17-AUG-18,14-SEP-17,9
+22,2017,26915737,92050743,14-SEP-17,N,36,M,On View,Credit Card/Automated Teller Machine Fraud,Property,Fraud Offenses,A,Black or African American,61,7686838,17-AUG-18,14-SEP-17,14
+23,2017,27082587,92555074,10-OCT-17,N,64,F,Taken INTO Custody,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,White,61,7686838,17-AUG-18,16-SEP-17,9
+24,2017,26915707,92050660,05-SEP-17,N,24,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7686838,17-AUG-18,05-SEP-17,20
+25,2017,26915732,92050731,14-SEP-17,N,18,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7686838,17-AUG-18,14-SEP-17,13
+26,2017,26915652,92050540,06-SEP-17,N,27,M,Taken INTO Custody,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,White,61,7629964,17-AUG-18,16-JUL-17,10
+27,2017,26915751,92050780,17-SEP-17,N,18,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7686838,17-AUG-18,17-SEP-17,12
+28,2017,27740892,94738574,22-DEC-17,N,25,M,Taken INTO Custody,Counterfeiting/Forgery,Property,Counterfeiting/Forgery,A,Black or African American,61,7829046,20-AUG-18,13-DEC-17,17
+29,2017,27082589,92555080,25-OCT-17,N,22,M,Taken INTO Custody,Burglary/Breaking & Entering,Property,Burglary/Breaking & Entering,A,White,61,7686838,17-AUG-18,23-SEP-17,6
+30,2017,27082635,92555228,21-OCT-17,N,58,F,On View,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,Black or African American,61,7713473,17-AUG-18,21-OCT-17,17
+31,2017,26263853,90114778,01-MAY-17,N,21,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7573648,17-AUG-18,15-APR-17,17
+32,2017,25840008,88884905,09-FEB-17,N,38,M,On View,Counterfeiting/Forgery,Property,Counterfeiting/Forgery,A,Black or African American,61,7522221,17-AUG-18,08-FEB-17,14
+33,2017,26681720,91328630,27-AUG-17,N,30,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,White,61,7657598,17-AUG-18,27-AUG-17,15
+34,2017,26178129,89854345,28-APR-17,N,28,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7573648,17-AUG-18,28-APR-17,12
+35,2017,26178016,89854040,03-APR-17,N,37,F,Taken INTO Custody,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7573648,17-AUG-18,03-APR-17,19
+36,2017,26178017,89854040,03-APR-17,N,36,M,Taken INTO Custody,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7573648,17-AUG-18,03-APR-17,19
+37,2017,26519407,90849289,11-JUL-17,N,38,M,Taken INTO Custody,Burglary/Breaking & Entering,Property,Burglary/Breaking & Entering,A,White,61,7629964,17-AUG-18,09-JUL-17,NA
+38,2017,26681711,91328591,21-AUG-17,N,22,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,White,61,7657598,17-AUG-18,21-AUG-17,17
+39,2017,25839984,88884867,03-FEB-17,N,37,M,On View,Robbery,Property,Robbery,A,White,61,7522221,17-AUG-18,03-FEB-17,16
+40,2017,26178112,89854294,24-APR-17,N,49,M,On View,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,White,61,7573648,17-AUG-18,24-APR-17,20
+41,2017,25839999,88884891,06-FEB-17,N,31,M,On View,Counterfeiting/Forgery,Property,Counterfeiting/Forgery,A,Black or African American,61,7522221,17-AUG-18,06-FEB-17,16
+42,2017,26027537,89448716,23-MAR-17,N,31,M,On View,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,White,61,7550698,17-AUG-18,23-MAR-17,16
+43,2017,26027556,89448741,26-MAR-17,N,21,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7550698,17-AUG-18,26-MAR-17,NA
+44,2017,26369730,90415047,06-JUN-17,N,21,M,On View,Murder and Nonnegligent Manslaughter,Person,Homicide Offenses,A,Black or African American,61,7605006,17-AUG-18,05-JUN-17,22
+45,2017,26263958,90115078,27-MAY-17,N,43,F,Taken INTO Custody,Shoplifting,Property,Larceny/Theft Offenses,A,White,61,7588245,17-AUG-18,27-MAY-17,11
+46,2017,26369789,90415296,30-JUN-17,N,28,F,On View,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,Black or African American,61,7605006,17-AUG-18,30-JUN-17,18
+47,2017,26369793,90415296,30-JUN-17,N,25,F,On View,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,Black or African American,61,7605006,17-AUG-18,30-JUN-17,18
+48,2017,26178127,89854339,27-APR-17,N,21,F,Taken INTO Custody,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7573648,17-AUG-18,27-APR-17,16
+49,2017,26178126,89854339,27-APR-17,N,21,F,Taken INTO Custody,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7573648,17-AUG-18,27-APR-17,16
+50,2017,26178049,89854156,13-APR-17,N,40,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,White,61,7573648,17-AUG-18,13-APR-17,15
+51,2017,26519457,90849418,20-JUL-17,N,22,M,On View,Destruction/Damage/Vandalism of Property,Property,Destruction/Damage/Vandalism of Property,A,White,61,7629964,17-AUG-18,19-JUL-17,23
+52,2017,26369778,90415252,26-JUN-17,N,21,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7605006,17-AUG-18,26-JUN-17,20
+53,2017,26369704,90414991,01-JUN-17,N,20,F,Taken INTO Custody,Credit Card/Automated Teller Machine Fraud,Property,Fraud Offenses,A,Black or African American,61,7588245,17-AUG-18,25-MAY-17,10
+54,2017,26681604,91328324,04-AUG-17,N,31,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7657598,17-AUG-18,04-AUG-17,17
+55,2017,26681602,91328324,04-AUG-17,N,29,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7657598,17-AUG-18,04-AUG-17,17
+56,2017,26681701,91328555,19-AUG-17,N,20,M,Taken INTO Custody,Arson,Property,Arson,A,White,61,7657598,17-AUG-18,19-AUG-17,13
+57,2017,26369756,90415163,14-JUN-17,N,28,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7605006,17-AUG-18,14-JUN-17,15
+58,2017,26369758,90415163,14-JUN-17,N,29,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7605006,17-AUG-18,14-JUN-17,15
+59,2017,26369755,90415163,14-JUN-17,N,22,M,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7605006,17-AUG-18,14-JUN-17,15
+60,2017,26369757,90415163,14-JUN-17,N,29,M,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7605006,17-AUG-18,14-JUN-17,15
+61,2017,26681699,91328556,23-AUG-17,N,35,F,Taken INTO Custody,Stolen Property Offenses,Property,Stolen Property Offenses,A,White,61,7657598,17-AUG-18,19-AUG-17,NA
+62,2017,26369750,90415125,12-JUN-17,N,63,M,On View,Destruction/Damage/Vandalism of Property,Property,Destruction/Damage/Vandalism of Property,A,White,61,7605006,17-AUG-18,12-JUN-17,1
+63,2017,25840047,88885023,22-FEB-17,N,19,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7522221,17-AUG-18,22-FEB-17,15
+64,2017,25840049,88885023,22-FEB-17,N,34,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7522221,17-AUG-18,22-FEB-17,15
+65,2017,26263852,90114778,01-MAY-17,N,21,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7573648,17-AUG-18,15-APR-17,17
+66,2017,26519385,90849217,08-JUL-17,N,24,M,Taken INTO Custody,Robbery,Property,Robbery,A,Black or African American,61,7629964,17-AUG-18,03-JUL-17,18
+67,2017,26519467,90849455,24-JUL-17,N,21,M,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7629964,17-AUG-18,24-JUL-17,13
+68,2017,26519465,90849455,24-JUL-17,N,22,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7629964,17-AUG-18,24-JUL-17,13
+69,2017,26519468,90849455,24-JUL-17,N,19,M,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7629964,17-AUG-18,24-JUL-17,13
+70,2017,26519443,90849371,14-JUL-17,N,15,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7629964,17-AUG-18,14-JUL-17,19
+71,2017,26681725,91328641,29-AUG-17,N,29,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7657598,17-AUG-18,29-AUG-17,9
+72,2017,26369784,90415263,27-JUN-17,N,20,M,On View,Motor Vehicle Theft,Property,Motor Vehicle Theft,A,White,61,7605006,17-AUG-18,27-JUN-17,9
+73,2017,26263874,90114875,12-MAY-17,N,44,M,On View,All Other Larceny,Property,Larceny/Theft Offenses,A,White,61,7588245,17-AUG-18,12-MAY-17,3
+74,2017,26263872,90114875,12-MAY-17,N,42,F,On View,All Other Larceny,Property,Larceny/Theft Offenses,A,White,61,7588245,17-AUG-18,12-MAY-17,3
+75,2017,26178025,89854074,06-APR-17,N,58,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7573648,17-AUG-18,06-APR-17,16
+76,2017,25840036,88885006,18-FEB-17,N,19,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7522221,17-AUG-18,18-FEB-17,14
+77,2017,26519436,90849360,13-JUL-17,N,21,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,White,61,7629964,17-AUG-18,13-JUL-17,14
+78,2017,26519481,90849523,30-JUL-17,N,35,F,On View,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,Black or African American,61,7629964,17-AUG-18,30-JUL-17,15
+79,2017,26519480,90849523,30-JUL-17,N,37,F,On View,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,Black or African American,61,7629964,17-AUG-18,30-JUL-17,15
+80,2017,27082592,92555083,15-OCT-17,N,23,M,Taken INTO Custody,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,White,61,7686838,17-AUG-18,24-SEP-17,13
+81,2017,26263860,90114809,06-MAY-17,N,46,M,On View,Shoplifting,Property,Larceny/Theft Offenses,A,White,61,7588245,17-AUG-18,06-MAY-17,19
+82,2017,26263859,90114809,06-MAY-17,N,43,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,White,61,7588245,17-AUG-18,06-MAY-17,19
+83,2017,26681640,91328404,10-AUG-17,N,31,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,White,61,7657598,17-AUG-18,09-AUG-17,23
+84,2017,26027401,89448305,01-MAR-17,N,36,M,Taken INTO Custody,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,Black or African American,61,7550698,17-AUG-18,01-MAR-17,18
+85,2017,26369788,90415284,28-JUN-17,N,19,F,Taken INTO Custody,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7605006,17-AUG-18,28-JUN-17,19
+86,2017,26519456,90849424,20-JUL-17,N,22,M,On View,Destruction/Damage/Vandalism of Property,Property,Destruction/Damage/Vandalism of Property,A,White,61,7629964,17-AUG-18,19-JUL-17,23
+87,2017,26519472,90849486,28-JUL-17,N,35,F,Taken INTO Custody,Stolen Property Offenses,Property,Stolen Property Offenses,A,White,61,7629964,17-AUG-18,28-JUL-17,11
+88,2017,26681730,91328660,30-AUG-17,N,19,M,On View,Embezzlement,Property,Embezzlement,A,Black or African American,61,7657598,17-AUG-18,30-AUG-17,NA
+89,2017,25840059,88885051,27-FEB-17,N,38,M,On View,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,White,61,7522221,17-AUG-18,27-FEB-17,14
+90,2017,25840016,88884941,12-FEB-17,N,40,F,Taken INTO Custody,Shoplifting,Property,Larceny/Theft Offenses,A,White,61,7522221,17-AUG-18,12-FEB-17,18
+91,2017,25840020,88884941,12-FEB-17,N,40,F,Taken INTO Custody,Shoplifting,Property,Larceny/Theft Offenses,A,White,61,7522221,17-AUG-18,12-FEB-17,18
+92,2017,26369740,90415099,09-JUN-17,N,26,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7605006,17-AUG-18,09-JUN-17,15
+93,2017,26519396,90849252,04-JUL-17,N,28,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7629964,17-AUG-18,04-JUL-17,18
+94,2017,26681709,91328584,21-AUG-17,N,22,M,On View,Robbery,Property,Robbery,A,White,61,7657598,17-AUG-18,21-AUG-17,17
+95,2017,26519381,90849226,02-JUL-17,N,51,F,On View,Robbery,Property,Robbery,A,White,61,7629964,17-AUG-18,02-JUL-17,16
+96,2017,26681594,91328296,02-AUG-17,N,17,F,Taken INTO Custody,Shoplifting,Property,Larceny/Theft Offenses,A,White,61,7657598,17-AUG-18,02-AUG-17,17
+97,2017,26681589,91328296,02-AUG-17,N,37,F,Taken INTO Custody,Shoplifting,Property,Larceny/Theft Offenses,A,White,61,7657598,17-AUG-18,02-AUG-17,17
+98,2017,26681591,91328296,02-AUG-17,N,17,F,Taken INTO Custody,Shoplifting,Property,Larceny/Theft Offenses,A,White,61,7657598,17-AUG-18,02-AUG-17,17
+99,2017,25840018,88884947,12-FEB-17,N,24,F,On View,Robbery,Property,Robbery,A,Black or African American,61,7522221,17-AUG-18,12-FEB-17,18
+100,2017,25840021,88884947,12-FEB-17,N,24,M,On View,Robbery,Property,Robbery,A,Black or African American,61,7522221,17-AUG-18,12-FEB-17,18
+101,2017,26681710,91328585,21-AUG-17,N,42,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7657598,17-AUG-18,21-AUG-17,22
+102,2017,26178009,89854017,25-APR-17,N,21,M,Taken INTO Custody,Destruction/Damage/Vandalism of Property,Property,Destruction/Damage/Vandalism of Property,A,White,61,7550698,17-AUG-18,27-MAR-17,0
+103,2017,26027565,89448762,26-MAR-17,N,28,M,On View,Burglary/Breaking & Entering,Property,Burglary/Breaking & Entering,A,Black or African American,61,7550698,17-AUG-18,26-MAR-17,14
+104,2017,26027564,89448762,26-MAR-17,N,50,M,On View,Burglary/Breaking & Entering,Property,Burglary/Breaking & Entering,A,Black or African American,61,7550698,17-AUG-18,26-MAR-17,14
+105,2017,26519455,90849416,20-JUL-17,N,22,M,On View,Burglary/Breaking & Entering,Property,Burglary/Breaking & Entering,A,White,61,7629964,17-AUG-18,19-JUL-17,23
+106,2017,26681671,91328503,16-AUG-17,N,43,F,On View,Robbery,Property,Robbery,A,White,61,7657598,17-AUG-18,16-AUG-17,13
+107,2017,26681708,91328576,20-AUG-17,N,38,M,On View,Robbery,Property,Robbery,A,Black or African American,61,7657598,17-AUG-18,20-AUG-17,17
+108,2017,25676984,88430758,14-JAN-17,N,18,M,On View,Counterfeiting/Forgery,Property,Counterfeiting/Forgery,A,White,61,7492636,17-AUG-18,14-JAN-17,1
+109,2017,25676981,88430742,10-JAN-17,N,31,F,On View,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,Black or African American,61,7492636,17-AUG-18,10-JAN-17,15
+110,2017,25677010,88430838,22-JAN-17,N,31,M,On View,Robbery,Property,Robbery,A,Black or African American,61,7492636,17-AUG-18,22-JAN-17,12
+111,2017,25840024,88884954,14-FEB-17,N,62,F,On View,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,White,61,7522221,17-AUG-18,14-FEB-17,15
+112,2017,26915750,92050776,17-SEP-17,N,16,M,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7686838,17-AUG-18,17-SEP-17,15
+113,2017,27082627,92555197,18-OCT-17,N,24,M,On View,Burglary/Breaking & Entering,Property,Burglary/Breaking & Entering,A,Black or African American,61,7713473,17-AUG-18,18-OCT-17,14
+114,2017,26915731,92050733,14-SEP-17,N,33,M,On View,Counterfeiting/Forgery,Property,Counterfeiting/Forgery,A,White,61,7686838,17-AUG-18,14-SEP-17,9
+115,2017,26027395,89448303,02-MAR-17,N,35,M,On View,Shoplifting,Property,Larceny/Theft Offenses,A,White,61,7550698,17-AUG-18,02-MAR-17,19
+116,2017,26027387,89448303,02-MAR-17,N,38,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,White,61,7550698,17-AUG-18,02-MAR-17,19
+117,2017,25839972,88884824,01-FEB-17,N,27,M,On View,Counterfeiting/Forgery,Property,Counterfeiting/Forgery,A,Black or African American,61,7522221,17-AUG-18,01-FEB-17,9
+118,2017,27999513,95483231,23-JAN-18,N,42,F,Taken INTO Custody,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7829046,20-AUG-18,23-DEC-17,10
+119,2017,27999516,95483240,04-JAN-18,N,19,M,Taken INTO Custody,Robbery,Property,Robbery,A,Black or African American,61,7829046,20-AUG-18,31-DEC-17,18
+120,2017,26915794,92050911,29-SEP-17,N,21,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,White,61,7686838,17-AUG-18,29-SEP-17,21
+121,2017,27211283,92963443,21-NOV-17,N,37,F,On View,Impersonation,Property,Fraud Offenses,A,Black or African American,61,7739502,17-AUG-18,21-NOV-17,12
+122,2017,27740845,94738406,04-DEC-17,N,35,F,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7829046,20-AUG-18,04-DEC-17,15
+123,2017,27740823,94738358,14-DEC-17,N,29,F,Taken INTO Custody,Impersonation,Property,Fraud Offenses,A,Black or African American,61,7739502,20-AUG-18,22-NOV-17,13
+124,2017,26915659,92050561,06-SEP-17,N,26,M,Taken INTO Custody,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7629964,17-AUG-18,10-JUL-17,13
+125,2017,26915783,92050895,28-SEP-17,N,17,F,Taken INTO Custody,Shoplifting,Property,Larceny/Theft Offenses,A,Asian,61,7686838,17-AUG-18,28-SEP-17,17
+126,2017,26915782,92050895,28-SEP-17,N,45,F,Taken INTO Custody,Shoplifting,Property,Larceny/Theft Offenses,A,Asian,61,7686838,17-AUG-18,28-SEP-17,17
+127,2017,27740919,94738647,21-DEC-17,N,17,M,On View,Theft From Motor Vehicle,Property,Larceny/Theft Offenses,A,Black or African American,61,7829046,20-AUG-18,21-DEC-17,12
+128,2017,27740921,94738647,21-DEC-17,N,16,M,On View,Theft From Motor Vehicle,Property,Larceny/Theft Offenses,A,Black or African American,61,7829046,20-AUG-18,21-DEC-17,12
+129,2017,27740870,94738474,09-DEC-17,N,28,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,White,61,7829046,20-AUG-18,09-DEC-17,20
+130,2017,27211279,92963428,18-NOV-17,N,38,F,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7739502,17-AUG-18,18-NOV-17,21
+131,2017,26915718,92050694,08-SEP-17,N,18,M,On View,Theft From Motor Vehicle,Property,Larceny/Theft Offenses,A,Black or African American,61,7686838,17-AUG-18,08-SEP-17,3
+132,2017,26915714,92050694,08-SEP-17,N,20,M,On View,Theft From Motor Vehicle,Property,Larceny/Theft Offenses,A,White,61,7686838,17-AUG-18,08-SEP-17,3
+133,2017,26915791,92050905,29-SEP-17,N,20,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7686838,17-AUG-18,29-SEP-17,15
+134,2017,26915684,92050592,21-SEP-17,N,23,F,Taken INTO Custody,All Other Larceny,Property,Larceny/Theft Offenses,A,Black or African American,61,7657598,17-AUG-18,17-AUG-17,20
+135,2017,27082596,92555098,04-OCT-17,N,41,M,On View,Counterfeiting/Forgery,Property,Counterfeiting/Forgery,A,Black or African American,61,7713473,17-AUG-18,04-OCT-17,13
+136,2017,27082621,92555186,15-OCT-17,N,16,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7713473,17-AUG-18,15-OCT-17,13
+137,2017,27082620,92555186,15-OCT-17,N,16,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7713473,17-AUG-18,15-OCT-17,13
+138,2017,27082622,92555186,15-OCT-17,N,16,F,On View,Shoplifting,Property,Larceny/Theft Offenses,A,Black or African American,61,7713473,17-AUG-18,15-OCT-17,13
+139,2017,27082651,92555260,25-OCT-17,N,29,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,White,61,7713473,17-AUG-18,25-OCT-17,14
+140,2017,27740815,94738343,02-DEC-17,N,39,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7829046,20-AUG-18,02-DEC-17,15
+141,2017,27740935,94738702,28-DEC-17,N,23,M,Taken INTO Custody,Robbery,Property,Robbery,A,Black or African American,61,7829046,20-AUG-18,28-DEC-17,16
+142,2017,26519474,90849498,28-JUL-17,N,35,F,Taken INTO Custody,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,White,61,7629964,17-AUG-18,28-JUL-17,11
+143,2017,26681703,91328558,19-AUG-17,N,37,F,On View,False Pretenses/Swindle/Confidence Game,Property,Fraud Offenses,A,Black or African American,61,7657598,17-AUG-18,19-AUG-17,14
+144,2017,26681643,91328412,10-AUG-17,N,46,M,Taken INTO Custody,Burglary/Breaking & Entering,Property,Burglary/Breaking & Entering,A,White,61,7657598,17-AUG-18,10-AUG-17,NA
+145,2017,26915778,92050878,28-SEP-17,N,37,M,On View,Credit Card/Automated Teller Machine Fraud,Property,Fraud Offenses,A,White,61,7686838,17-AUG-18,27-SEP-17,22
+146,2017,27740908,94738602,18-DEC-17,N,32,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,White,61,7829046,20-AUG-18,18-DEC-17,16
+147,2017,27211267,92963353,09-NOV-17,N,26,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,White,61,7739502,17-AUG-18,09-NOV-17,16
+148,2017,27740917,94738626,22-DEC-17,N,25,M,Taken INTO Custody,Counterfeiting/Forgery,Property,Counterfeiting/Forgery,A,Black or African American,61,7829046,20-AUG-18,19-DEC-17,19
+149,2017,25840057,88885044,26-FEB-17,N,25,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7522221,17-AUG-18,26-FEB-17,17
+150,2017,25839978,88884848,03-FEB-17,N,14,M,On View,Stolen Property Offenses,Property,Stolen Property Offenses,A,Black or African American,61,7522221,17-AUG-18,02-FEB-17,23
+151,2017,26027508,89448640,17-MAR-17,N,20,M,On View,Counterfeiting/Forgery,Property,Counterfeiting/Forgery,A,White,61,7550698,17-AUG-18,17-MAR-17,12
+152,2017,26263866,90114839,10-MAY-17,N,18,F,On View,Counterfeiting/Forgery,Property,Counterfeiting/Forgery,A,White,61,7588245,17-AUG-18,10-MAY-17,15

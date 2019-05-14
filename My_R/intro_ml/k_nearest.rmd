@@ -1,0 +1,134 @@
+#1. Preprocess the data
+Let's return to the tragic titanic dataset. This time, you'll classify its observations differently, with k-Nearest Neighbors (k-NN). However, there is one problem you'll have to tackle first: scale.
+
+As you've seen in the video, the scale of your input variables may have a great influence on the outcome of the k-NN algorithm. In your case, the Age is on an entirely different scale than Sex and Pclass, hence it's best to rescale first!
+
+For example, to normalize a vector x, you could do the following:
+
+![](./photos/5.JPG)
+
+
+Head over to the instructions to normalize Age and Pclass for both the training and the test set.
+
+
+Assign the class label, Survived, of both train and test to separate vectors: train_labels and test_labels.
+Copy the train and test set to knn_train and knn_test. You can just use the assignment operator (<-) to do this.
+Drop the Survived column from knn_train and knn_test. Tip: dropping a column named column in a data frame named df can be done as follows: df$column <- NULL.
+For this instruction, you don't have to write any code. Pclass is an ordinal value between 1 and 3. Have a look at the code that normalizes this variable in both the training and the test set. To define the minimum and maximum, only the training set is used; we can't use information on the test set (like the minimums or maximums) to normalize the data.
+In a similar fashion, normalize the Age column of knn_train as well as knn_test. Fill in the ___ in the code. Again, you should only use features from the train set to decide on the normalization! You should use the intermediate variables min_age and max_age.
+
+```{r}
+# train and test are pre-loaded
+
+# Store the Survived column of train and test in train_labels and test_labels
+train_labels = train$Survived
+test_labels = test$Survived
+
+
+# Copy train and test to knn_train and knn_test
+knn_train = train 
+knn_test = test
+
+# Drop Survived column for knn_train and knn_test
+knn_train$Survived = NULL
+knn_test$Survived = NULL
+
+
+# Normalize Pclass
+min_class <- min(knn_train$Pclass)
+max_class <- max(knn_train$Pclass)
+knn_train$Pclass <- (knn_train$Pclass - min_class) / (max_class - min_class)
+knn_test$Pclass <- (knn_test$Pclass - min_class) / (max_class - min_class)
+
+# Normalize Age
+min_age <- min(knn_train$Age)
+max_age <- max(knn_train$Age)
+knn_train$Age <- (knn_train$Age - min_age)/(max_age - min_age)
+knn_test$Age <- (knn_test$Age - min_age)/(max_age - min_age)
+```
+
+
+#2. The knn() function
+Now that you have your preprocessed data - available in your workspace as knn_train, knn_test, train_labels and test_labels - you are ready to start with actually classifying some instances with k-Nearest Neighbors.
+
+To do this, you can use the knn() function which is available from the class package.
+
+
+Load the class package.
+
+Use knn() to predict the values of the test set based on 5 neighbors. Fill in variables available in your workspace on the ___. The prediction result is assigned to pred. The function takes four arguments:
+
+train: observations in the training set, without the class labels, available in knn_train
+test: observations in the test, without the class labels, available in knn_test
+cl: factor of true class labels of the training set, available in train_labels
+k: number of nearest neighbors you want to consider, 5 in our case
+With test_labels and pred, the predicted labels, use table() to build a confusion matrix: conf. Make test_labels the rows in the confusion matrix.
+
+Print out the confusion matrix.
+
+```{r}
+# knn_train, knn_test, train_labels and test_labels are pre-loaded
+
+# Set random seed. Don't remove this line.
+set.seed(1)
+
+# Load the class package
+library(class)
+
+# Fill in the ___, make predictions using knn: pred
+pred <- knn(train = knn_train, test = knn_test, cl = train_labels, k = 5)
+
+# Construct the confusion matrix: conf
+conf = table(test_labels, pred)
+
+# Print out the confusion matrix
+conf
+```
+
+#3. K's choice
+A big issue with k-Nearest Neighbors is the choice of a suitable k. How many neighbors should you use to decide on the label of a new observation? Let's have R answer this question for us and assess the performance of k-Nearest Neighbor classification for increasing values of k.
+
+Again, knn_train, knn_test, train_labels and test_labels that you've created before are available in your workspace.
+
+The range, a vector of K values to try, and an accs vector to store the accuracies for these different values, have already been created. You don't have to write extra code for this step.
+
+Fill in the ___ inside the for loop:
+
+Use knn() to predict the values of the test set like you did in the previous exercise. This time set the k argument to k, the loop index of the for loop. Assign the result to pred.
+With test_labels and pred, the predicted labels, use table() to build a confusion matrix.
+Derive the accuracy and assign it to the correct index in accs. You can use sum() and diag() like you did before.
+The code to create a plot with range on the x-axis and accs on the y-axs is there for you, notice how it changes the xlab argument.
+
+Calculate the best k (giving the highest accuracy) with which.max() and print it out to the console. Tip: you want to find out which index is highest in the accs vector.
+
+```{r}
+# knn_train, knn_test, train_labels and test_labels are pre-loaded
+
+# Set random seed. Don't remove this line.
+set.seed(1)
+
+# Load the class package, define range and accs
+library(class)
+range <- 1:round(0.2 * nrow(knn_train))
+accs <- rep(0, length(range))
+
+for (k in range) {
+
+  # Fill in the ___, make predictions using knn: pred
+  pred <- knn(knn_train, knn_test, train_labels, k = k)
+
+  # Fill in the ___, construct the confusion matrix: conf
+  conf <- table(test_labels, pred)
+
+  # Fill in the ___, calculate the accuracy and store it in accs[k]
+  accs[k] <- sum(diag(conf))/sum(conf)
+}
+
+# Plot the accuracies. Title of x-axis is "k".
+plot(range, accs, xlab = "k")
+
+# Calculate the best k
+which.max(accs)
+```
+
+

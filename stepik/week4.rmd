@@ -1,0 +1,139 @@
+
+
+```{r}
+library(tidyverse) 
+library(tidytext) 
+```
+
+```{r}
+media = read_csv("C:/Users/Duy/Desktop/Mainor_2/2_seminars/lab03-tm/media.csv") 
+rustopwords <- data.frame(words=stopwords::stopwords("ru"), stringsAsFactors=FALSE) #загрузит словарь со стоп-словами
+<<<<<<< HEAD
+media_words = media %>% tidytext::unnest_tokens(words, text) %>% anti_join(rustopwords)
+=======
+media_words = media %>% tidytext::unnest_tokens(words, text) %>% anti_join(rustopwords) %>% na.omit()
+>>>>>>> 3bf901bca42b85a6a13c1e84a543630194353da3
+
+media_words = media_words %>% filter(!str_detect(words, "[[:digit:]]"))
+media_words = media_words %>% filter(words != "br")
+
+media_words_count = media_words %>% dplyr::count(words) %>% filter(n > 2 & n < quantile(n, 0.99))
+
+
+median(media_words_count$n)
+
+median_words_id = media_words %>% dplyr::count(media) %>% filter(n >= 6)
+media_words = media_words %>% filter(media %in% median_words_id$media)
+media_words = media_words %>% dplyr::count(media, words)
+
+media_tf_tdf = media_words %>% bind_tf_idf(words, media, n) %>% arrange(-tf_idf)
+
+
+media_tf_tdf %>% arrange(media, -tf_idf)
+max(media_tf_tdf$media)
+min(media_tf_tdf$media)
+
+media = media_tf_tdf %>% dplyr::count(media)
+c = c()
+
+for (i in media$media) {
+  m = media_tf_tdf %>% filter(media==i) %>% arrange(-tf_idf) %>% head(1)
+  c = append(c, m$words)
+}
+
+"побои" %in% c
+
+"иностранным" %in% c
+
+"шоу" %in% c
+"фбк" %in% c
+"суток" %in% c
+"харбин" %in% c
+
+
+# media_words1 = media_words %>% dplyr::count(X1, words) %>% filter(words %in% media_words2$words)
+# 
+# 
+# media_words1 %>% bind_tf_idf(words, X1, n) %>% arrange(-tf_idf)
+
+```
+
+```{r}
+rbc <- read_csv("~/shared/minor2_2018/data/rbc.csv")
+
+#Удалите числа и пунктуацию, а желательно привести слова к нижнему регистру. 
+rbc$text = str_replace_all(rbc$text, '[[:space:]]+', ' ') #дополнительно удалите лишние пробелы
+
+#Вызовем mystem
+text.tmp <- system2("mystem", c("-c", "-l", "-d"), input = rbc$text, stdout=TRUE) 
+#Почистим полученный аутпут 
+
+text.lem <- str_replace_all(text.tmp, "\\{([^}]+?)([?]+)?\\}", "\\1")
+rbc <- cbind(rbc, lem = text.lem)
+rbc$lem = as.character(rbc$lem)
+
+rbc %>% tidytext::unnest_tokens(words, text) %>% distinct(words)
+
+rbc %>% tidytext::unnest_tokens(words, lem) %>% distinct(words)
+#879
+#674
+879 - 674
+
+```
+
+```{r}
+rbc_vk = read_csv("~/shared/minor2_2018/data/rbc_vk.csv") 
+#в колонке lem мы записали тексты новостей уже в лемматизированной форме. приведите по этой колонке данные в длинный формат
+rbc_vk = rbc_vk %>% unnest_tokens(words, lem)
+rbc_vk = rbc_vk %>% anti_join(rustopwords)
+rbc_vk = rbc_vk %>% filter(!str_detect(rbc_vk$words, "[A-z]"))
+
+#удалите слова, встречающиеся меньше 15 или больше 30 раз
+rbc_vk_word = rbc_vk %>% dplyr::count(words) %>% filter(n < 15 | n > 30)
+rbc_vk = rbc_vk %>% filter(words %in% rbc_vk_word$words)
+#удалите тексты, в которых встречается 5 и меньше слов
+rbc_vk_id = rbc_vk %>% dplyr::count(id) %>% filter(n>5)
+rbc_vk = rbc_vk %>% filter(id %in% rbc_vk_id$id)
+rbc_vk = rbc_vk %>% dplyr::count(id, words)
+#посчитайте взвешенную частотность слов с bind_tf_idf() и создайте term-document matrix
+rbc_vk_tf_idf = rbc_vk %>% bind_tf_idf(words, id, n)
+
+
+
+rbc_vk_tf_idf$idduy = rbc_vk_tf_idf$id
+rbc_vk_tf_idf = rbc_vk_tf_idf %>% select(-id)
+library(tidyr)
+rbc.tdm = rbc_vk_tf_idf %>%
+    dplyr::select(idduy, words, tf_idf) %>%
+    spread(words, tf_idf, fill = 0)
+
+rownames(rbc.tdm) =  rbc.tdm$idduy #присвоим строкам названия -- id постов в вк
+
+rbc.tdm = rbc.tdm %>% select(-idduy)
+rbc.tdm = rbc.tdm %>% as.matrix()
+
+c = c(4788911,
+ 4786323,
+ 4789051,
+ 4783509)
+rbc_test1 = rbc.tdm %>% filter(idduy == 4788911)
+rbc_test2 = rbc.tdm %>% filter(idduy == 4786323)
+rbc_test3 = rbc.tdm %>% filter(idduy == 4789051)
+rbc_test4 = rbc.tdm %>% filter(idduy == 4783509)
+# 4788911 %in% rbc.tdm$idduy
+
+test_tdm = rbind(rbc_test1, rbc_test2, rbc_test3, rbc_test4)
+
+lsa::cosine(t(test_tdm))
+
+```
+
+
+```{r}
+
+
+
+rbc_cosine = lsa::cosine(rbc_tdm %>% t())
+
+```
+

@@ -1,0 +1,260 @@
+
+---
+title: Text mining. Lab 2
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+## Повторение - Text mining
+
+Сегодняшнее занятие будет посвященно самостоятельной практике тех методов анализа текста, которые мы успели пройти.
+
+Загрузим необходимые пакеты.
+
+```{r}
+library(tidyverse)
+library(tidytext)
+```
+
+Датасет, который мы будем анализировать, это база из 1617 статей с сайта ООН, содержащих слово "peacekeeper" и написанных в промежуток между 2001 и 2016 годами. В данных содержится числовой идентификатор статьи (id), её название (title), текст статьи (text) и лемматизированный текст (text_lem).
+
+```{r}
+news = read.csv("~/shared/minor2_2017/2-tm/lab04/UN_news_peacekeepers.csv", stringsAsFactors=FALSE)
+```
+
+# Задание 1
+
+```{r}
+news.tidy <- news %>%
+    unnest_tokens(words, text_lem)
+```
+
+```{r}
+news.tidy %>%
+    dplyr::select(words) %>%
+    n_distinct()
+```
+
+```{r}
+library(stopwords)
+head(stopwords("en"), 20)
+
+stopwords <- data.frame(words=stopwords("en"), stringsAsFactors=FALSE)
+
+news.nonstop <- news.tidy %>%
+    anti_join(stopwords)
+```
+
+```{r}
+words_count = news.nonstop %>% 
+  dplyr::count(words) 
+
+#удалим слишком редкие и наоборот, слишком распространенные
+words_count = words_count %>% 
+  filter(n > 5 & n < quantile(words_count$n, 0.99))
+
+news.nonstop = news.nonstop %>% 
+  filter(words %in% words_count$words)
+```
+
+```{r}
+news.nonstop %>%
+    count(words, sort = TRUE) %>%
+    filter(row_number() < 15) %>%
+    ggplot(aes(x = reorder(words, n), y = n)) +
+    geom_col() +
+    labs(x = "word") + 
+    coord_flip() +
+    theme_minimal()
+```
+
+```{r}
+library(wordcloud)
+news.nonstop %>%
+    count(words) %>%
+    with(wordcloud(words, n, max.words = 15, scale=c(1,.15)))
+```
+
+# Задание 2
+```{r}
+# удалить отзывы от которых осталось мало слов
+news.count = news.nonstop %>%
+    dplyr::count(id) %>%
+    filter(n>5) 
+
+# для оставшихся отзывов посчитаем метрику TF-IDF
+news_tf_idf = news.nonstop %>%
+    filter(id %in% news.count$id) %>%
+    dplyr::count(id, words) %>%
+    bind_tf_idf(words, id, n)
+
+# приведем данные к широкому формату. создадим term-document matrix
+news.tdm = news_tf_idf %>%
+    dplyr::select(id, words, tf_idf) %>%
+    spread(words, tf_idf, fill = 0) 
+```
+
+```{r}
+# найти наиболее похожие тексты
+texts_id = c("253", "252", "917", "901", "904", "910")
+
+news.tdm = news.tdm %>% 
+  filter(id %in% texts_id)
+
+row.names(news.tdm) = news.tdm$id
+news.tdm = news.tdm %>% 
+  select(-id)
+
+news.tdm = as.matrix(news.tdm)
+
+similarity = lsa::cosine(t(news.tdm))
+
+news$title[news$id %in% texts_id]
+```
+
+## Анализ мнений и оценок (Sentiment analysis)
+
+Попробуем проанализировать эмоциональную окраску (оценку, sentiment) 
+
+```{r}
+sentdict = get_sentiments("afinn")
+
+head(sentdict)
+tail(sentdict)
+```
+
+```{r}
+news.sent = news.tidy %>% 
+  inner_join(sentdict, by = c("words" = "word")) 
+
+news.sent_count = news.sent %>% 
+  group_by(id) %>% 
+  summarise(mean = mean(score)) #посчитаем
+
+news.sent_count %>% arrange(-mean) %>% head() # самые оценочные отзывы
+news$title[news$id == "885"]
+news$title[news$id == "1809"]
+news$title[news$id == "1796"]
+
+news.sent_count %>% arrange(mean) %>% head() # самые нейтральные отзывы
+news$title[news$id == "1840"]
+news$title[news$id == "1157"]
+news$title[news$id == "523"]
+```
+
+# Задание 4
+```{r}
+# кластеризация
+# оставим тексты только про миссию в Африку
+
+africa = news %>% 
+  filter(str_detect(text, "Central African Republic"))
+
+africa.tidy = africa %>%
+  unnest_tokens(words, text_lem)
+
+africa.tidy = africa.tidy %>%
+  anti_join(stopwords)
+
+words_count = africa.tidy %>% 
+  dplyr::count(words)
+
+words_count = words_count %>%
+  filter(n > 1 & n < quantile(words_count$n, 0.99))
+
+africa.tidy = africa.tidy %>%
+  filter(words %in% words_count$words)
+
+africa.tdm = africa.tidy %>% 
+  dplyr::count(title, words) %>% 
+  spread(words, n, fill = 0)
+```
+
+```{r}
+library(factoextra)
+
+df = africa.tdm[-(1)] %>% as.matrix()
+row.names(df) = africa.tdm$title
+
+res <- hcut(df, hc_method = "ward.D", k = 4, stand = TRUE)
+factoextra::fviz_dend(res)
+
+fviz_cluster(res)
+
+clusters = cbind(africa.tdm[,1], cluster = res$cluster)
+
+clusters = inner_join(clusters, africa)
+```
+
+# Задание 5
+ с помощью меры g2 loglikelyhood найдем слова, характерные для датасета про центральную африку
+
+```{r}
+africa_words_count = africa.tidy %>% 
+  dplyr::count(words)
+names(africa_words_count)[2] = "africa"
+
+news_words_count = news.tidy %>% 
+  dplyr::count(words)
+names(news_words_count)[2] = "news"
+
+words_count = inner_join(news_words_count, africa_words_count)
+
+```
+
+```{r}
+g2 = function(a, b) {
+  c = sum(a)
+  d = sum(b)
+  E1 = c * ((a + b) / (c + d))
+  E2 = d * ((a + b) / (c + d))
+  return(2*((a*log(a/E1+1e-7)) + (b*log(b/E2+1e-7))))
+}
+
+words_count_g2 <- words_count %>% 
+  mutate(g2=g2(africa, news))
+
+top_words = words_count_g2 %>% arrange(-g2) %>% head(n = 50)
+```
+
+## N-граммы
+
+Пока что единицей измерения текста у нас были отдельные слова. Тем самым мы полностью игнорировали информацию о последовательности слов в тексте. По этой причине векторное представление документа еще называют «мешком слов» (bag of words), потому что мы рассматриваем набор слов, но не их порядок. Однако есть простой способ, принципиально не меняя наших инструментов измерения текста, инкорпорировать в них информацию о последовательности слов — *n-граммы*. Вместо одного слова возьмем в качестве единицы несколько стоящих подряд слов. 
+
+```{r}
+news.bigrams = news %>% 
+  unnest_tokens(bigram, text_lem, token = "ngrams", n = 2)
+
+news.bigrams %>% 
+  dplyr::count(bigram, sort = TRUE)
+
+news.bifiltered = news.bigrams %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  filter(!word1 %in% stopwords::stopwords("en")) %>% 
+  filter(!word2 %in% stopwords::stopwords("en")) 
+
+news.bifiltered %>% 
+  dplyr::select(word1, word2) %>% 
+  dplyr::count(word1, word2, sort = TRUE)
+
+news.bifiltered %>% 
+  filter(word2 == "africa") %>% 
+  dplyr::count(word1, word2, sort=TRUE) %>%
+  dplyr::select(word1, word2, n)
+
+news.bifiltered %>% 
+  filter(word2 == "america") %>% 
+  dplyr::count(word1, word2, sort=TRUE) %>%
+  dplyr::select(word1, word2, n)
+
+```
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,17 @@
+```{r}
+library(readr)
+library(ggplot2)
+library(lubridate)
+library(stringr)
+library(dplyr)
+
+
+data = read_csv("Absenteeism_at_work.csv")
+
+```
+
+
+```{r}
+
+```
+

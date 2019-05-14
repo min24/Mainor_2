@@ -1,0 +1,5 @@
+ethnicity_id,ethnicity_code,ethnicity_name,hc_flag
+4,M,Multiple,Y
+1,H,Hispanic or Latino,Y
+2,N,Not Hispanic or Latino,Y
+3,U,Unknown,Y

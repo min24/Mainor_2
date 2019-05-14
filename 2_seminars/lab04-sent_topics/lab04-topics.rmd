@@ -1,0 +1,543 @@
+---
+title: "Lab04. Text mining: Dictionaries, sentiment analysis and topic modelling"
+output: html_document
+---
+
+На этой неделе продолжаем работать с анализом текста.
+
+Напоминание: много полезного и интересного можно найти в книге про tidytext <https://www.tidytextmining.com/>
+
+И работаем снова с данными об отзывах на отели.
+
+```{r}
+library(readr)
+reviews = read_csv("~/shared/minor2_2018/2-tm-net/lab03-tm/reviews.csv")  
+# в колонке lem лемматизированные отзывы + нет пунктуации и чисел
+```
+
+Прошлый раз мы считали частоты слов (в том числе tf-idf -- зачем?), смотрели, как по частотам можно попытаться определить примерное содержание текста (частые содержательные слова) и стиль текста (разница в употреблении служебных слов), искали похожие тексты.
+
+Загружаем пакеты, которые нам понадобятся. 
+
+```{r}
+library(tidytext)
+library(ggplot2)
+library(wordcloud2)
+library(RColorBrewer)
+library(tidyr)
+library(stringr)
+library(dplyr)
+rustopwords = data.frame(words=c(stopwords::stopwords("ru"), "это"), stringsAsFactors=FALSE)
+```
+
+Повторение: посмотрим на самые частые слова в заголовках, чтобы понять, выделяются ли какие-то темы (дополните код)
+
+```{r eval = FALSE}
+# делим на слова
+quotes = reviews %>%
+  unnest_tokens(words, lem)
+
+# удаляем стоп-слова
+quotes = quotes %>%
+  anti_join(rustopwords)
+
+# считаем частоты
+quotes = quotes %>%
+  dplyr::count(words, sort = TRUE) %>%
+  ungroup()
+  
+quotes %>% 
+  filter(n > 100) %>%
+  mutate(word = reorder(words, n)) %>% # чтобы упорядочить по частоте
+  ggplot(aes(word, n)) +
+  geom_bar(stat = "identity") +
+  xlab(NULL) +
+  coord_flip() # чтобы читать слова было удобнее
+```
+
+Плохих слов нет в заголовках? Почему? Плохие оценки практически не ставят:
+```{r}
+ggplot(data=reviews,aes(x=rating)) + geom_bar()
+```
+
+Давайте посмотрим, отличаются ли комментарии с разными оценками. В этом чанке мы разделяем отзывы с рейтингом меньше 3 и рейтингом равным 5. Мы сравниваем облака слов по двум этим датасетам. На что обращают внимание обе категории комментаторов?
+
+```{r}
+reviews_tokens = reviews %>%
+  unnest_tokens(words, lem) %>% anti_join(rustopwords)
+
+rating2 = filter(reviews_tokens, rating < 3)
+rating2 = rating2 %>% dplyr::count(words)
+rating2 = filter(rating2, n < 200)
+
+wordcloud2(data = rating2)
+
+rating5 = filter(reviews_tokens, rating == 5)
+rating5 = rating5 %>% dplyr::count(words)
+rating5 = filter(rating5, n < 300)
+
+wordcloud2(data = rating5)
+```
+
+Или в формате столбчатой диаграммы (bar plot):
+
+```{r}
+rating2 %>% 
+  filter(n > 50) %>%
+  mutate(word = reorder(words, n)) %>%
+  ggplot(aes(word, n)) +
+  geom_bar(stat = "identity") +
+  xlab(NULL) +
+  coord_flip()
+
+rating5 %>% 
+  filter(n > 250) %>%
+  mutate(word = reorder(words, n)) %>%
+  ggplot(aes(word, n)) +
+  geom_bar(stat = "identity") +
+  xlab(NULL) +
+  coord_flip()
+```
+
+# Сравнение по темам
+
+Как-то пока не очень понятно. Но давайте посмотрим, можем ли мы посмотреть употребление слов по конкретным темам. Другими словами -- проверим, что в плохих отзывах чаще говорят про транпортную доступность (или про еду)
+
+Составим наборы интересных нам слов
+
+```{r}
+sights =c("площадь", "собор", "невский", "исаакиевский", "достопримечательность", "парк")
+transport = c("метро", "вокзал", "аэропорт", "центр", "станция", "московский", "близость", "пешком")
+meal = c("чай", "еда", "завтрак", "бар", "ресторан", "кофе", "шведский")
+furniture = c("мебель","белье","кровать")
+```
+
+Посмотрим, например, на транспорт. Логика действий такая же, как и при стилометрии -- оставляем только те слова, что нам интересны. Не забываем преобразовать список слов в data.frame, чтобы использовать операции _join
+
+```{r}
+transport_df = data.frame(words = transport, stringsAsFactors = F)
+reviews_trans = reviews_tokens %>% 
+  inner_join(transport_df)
+```
+
+А теперь сравним разные отзывы. Сделаем поправку на то, что отзывов с разными оценками у нас разное количество
+```{r}
+# слова про транспорт
+trans_count = reviews_trans %>% dplyr::count(rating)
+
+# всего слов в каждой группе по оценке
+reviews_total = reviews_tokens %>% dplyr::count(rating)
+
+trans_count$prop = trans_count$n/reviews_total$n
+
+ggplot(data = trans_count) + geom_bar(aes(x = rating, y = prop), stat = "identity")
+```
+
+Теперь рассмотрим немного другую ситуацию -- нам интересны не конкретные значения, а относительное распределение на темы, т.е. что, например, в отличных отзывах больше говорят про еду, а не про транспорт
+
+Соединим все нужные нам слова в один датафрейм
+```{r}
+interests = data.frame(words = c(sights, transport, meal, furniture), stringsAsFactors = F)
+interests$topic = c(rep("sights", length(sights)), 
+                    rep("transport", length(transport)), 
+                    rep("meal", length(meal)), 
+                    rep("furnitute", length(furniture)))
+
+```
+
+Оставляем только их
+```{r}
+reviews_topics = reviews_tokens %>% 
+  inner_join(interests)
+```
+
+Считаем по каждой теме и оценке
+
+```{r}
+topic_count = reviews_topics %>% dplyr::count(topic, rating)
+```
+
+```{r}
+ggplot(data = topic_count) + 
+  geom_bar(aes(x = rating, y = n, fill = topic), 
+           stat = "identity", position = "fill")
+```
+
+Что вы можете сказать про отзывы с разными оценками?
+
+**Задание**:
+
+Посмотрите различия в темах по звездам отеля, а не по оценке в отзыве. Есть ли различие в обсуждении?
+
+## Анализ мнений и оценок (Sentiment analysis)
+
+Точно таким же образом можно анализировать настроение, т.е. насколько текст позитивный или негативный (веселый, страшный и т.д.). Основная проблема -- нам нужны соответствующие списки слов (словари). Для английского их, например, достаточно много, но все равно нужно понимать, что универсальные списки не всегда хорошо работают. Такие словари могут просто относить слово к тому или иному классу, а могут давать какую-то оценку (слово "потрясающий" более эмоционально, чем "хороший")
+
+Попробуем проанализировать эмоциональную окраску (оценку, sentiment) отзывов про отели. Для этого сначала будем использовать словарь оценочной лексики Четверкина.
+
+```{r}
+sentdict <- read.table("~/shared/minor2_2018/2-tm-net/lab04-sent_topics/sentdict.txt", header=T, stringsAsFactors=F) # словарь оценочной лексики
+
+head(sentdict)
+tail(sentdict)
+```
+
+Так, для каждого отзыва мы можем посчитать, насколько оценочный характер он носит -- без привязки к характеру (позитивный или негативный). 
+
+```{r}
+reviews.sent = reviews_tokens %>% 
+  inner_join(sentdict) #почему используется inner_join, а не anti_join?
+
+reviews.sent_count = reviews.sent %>% 
+  group_by(id) %>% 
+  summarise(mean = mean(value)) #посчитаем
+
+reviews.sent_count %>% arrange(-mean) %>% head() # самые оценочные отзывы
+reviews$review[reviews$id == "rn280308837"]
+
+reviews.sent_count %>% arrange(mean) %>% head() # самые нейтральные отзывы
+reviews$review[reviews$id == "rn219370699"]
+```
+
+Но все же хочется иметь какую-то оценку вида "позитивный-негативный". 
+
+* Как можно получить исходный словарь для оценки?
+
+Один из вариантов -- использовать имеющиеся данные с оценками (например, отзывы). Мы можем попытаться создать свой специфичный для наших данных сентимент-словарь.
+
+Возьмем за отрицательные отзывы все те, кто оценил отель на 1-2 балла, а положительные -- на 5. Посмотрим распределение оценок посетителей 
+
+```{r}
+reviews %>% ggplot() + geom_bar(aes(rating)) + theme_bw()
+
+#отбираем слова из позитивных отзывов
+positive = reviews.sent %>% filter(id %in% reviews$id[reviews$rating==5]) %>% mutate(sent = "positive")
+
+#отбираем слова из негативных отзывов
+negative = reviews.sent %>% filter(id %in% reviews$id[reviews$rating<3]) %>% mutate(sent = "negative")
+
+#соединяем вместе и превращаем positive и negative в отдельные колонки
+reviews.pmi = rbind(positive, negative) %>% dplyr::select(-id,-value)
+reviews.pmi = reviews.pmi %>% dplyr::count(words, sent) %>% spread(sent, n, fill = 0)
+```
+
+Отберем оценочные слова из словаря Четверкина, характерные для каждого из классов с помощью Pointwise Mutual Information (PMI) -- слово "позитивнее", если оно чаще встречается в положительных отзывах, чем в отрицательных (с поправкой на то, как часто оно встречается в целом) . 
+
+```{r}
+freq_p = reviews.pmi$positive
+freq_n = reviews.pmi$negative
+sum_p = sum(reviews.pmi$positive) 
+sum_n = sum(reviews.pmi$negative) 
+
+pmi_p = log((freq_p/sum_p)/((freq_p+freq_n)/(sum_p+sum_n)*sum_p/(sum_p+sum_n))+1, base=2)
+reviews.pmi$PMI_p = pmi_p
+
+pmi_n = log((freq_n/sum_n)/((freq_p+freq_n)/(sum_p+sum_n)*sum_n/(sum_p+sum_n))+1, base=2)
+reviews.pmi$PMI_n = pmi_n
+
+reviews.pmi %>% 
+  ggplot(aes(x=positive+negative, y=PMI_p-PMI_n, color=5*PMI_p-PMI_n, label=words)) +
+  scale_color_gradient2(low="red", high="blue") +
+  geom_point()
+
+reviews.pmi %>% 
+  ggplot(aes(x=positive+negative, y=PMI_p-PMI_n, color=5*PMI_p-PMI_n, label=words)) +
+  scale_color_gradient2(low="red", high="blue") +
+  geom_text(check_overlap = TRUE)
+```
+
+То есть pmi_p в нашем датасете показывает насколько слово "положительно" согласно отзывам, а pmi_n -- насколько оно "негативно"
+
+**Задание**
+
+1. При построении оценочного словаря для нашей базы отзывов мы использовали только отзывы с оценками 1-2 и 5. Теперь ваша задача — пользуясь этим словарем вычислить степень положительного/отрицательного сентимента для всех отзывов из базы с оценками 3-4. Подсказка: используйте PMI_p и PMI_n в качестве меры оценочности. Постройте диаграмму рассеяния (scatterplot) с распределением этих отзывов по степени оценочности.
+
+```{r}
+# новый дф с оценками 3-4
+
+
+rating34 = 
+  reviews_tokens %>% left_join(reviews.pmi) %>% 
+  filter(rating == 3 | rating == 4, words %in% reviews.pmi$words) %>%
+  group_by(id) %>% summarise(mean_p = mean(PMI_p), mean_n = mean(PMI_n))
+
+rating34 %>% ggplot(aes(x = mean_p, y = mean_n)) +geom_point()
+  
+
+
+
+# сколько раз оно втречалось в позитивном и негативном словаре
+# группируем по отзывам и получаем среднее значение pmi для двух словарей
+# нарисовать диаграмму рассения по двум pmi, где точка отзыва
+
+```
+
+```{r}
+#отбираем слова из позитивных отзывов
+positive2 = reviews.sent %>% filter(id %in% reviews$id[reviews$rating==4]) %>% mutate(sent = "positive")
+
+#отбираем слова из негативных отзывов
+negative2 = reviews.sent %>% filter(id %in% reviews$id[reviews$rating==3]) %>% mutate(sent = "negative")
+
+#соединяем вместе и превращаем positive и negative в отдельные колонки
+reviews.pmi2 = rbind(positive2, negative2) %>% dplyr::select(-id,-value)
+reviews.pmi2 = reviews.pmi2 %>% dplyr::count(words, sent) %>% spread(sent, n, fill = 0)
+
+freq_p = reviews.pmi2$positive
+freq_n = reviews.pmi2$negative
+sum_p = sum(reviews.pmi2$positive) 
+sum_n = sum(reviews.pmi2$negative) 
+
+pmi_p = log((freq_p/sum_p)/((freq_p+freq_n)/(sum_p+sum_n)*sum_p/(sum_p+sum_n))+1, base=2)
+reviews.pmi2$PMI_p = pmi_p
+
+pmi_n = log((freq_n/sum_n)/((freq_p+freq_n)/(sum_p+sum_n)*sum_n/(sum_p+sum_n))+1, base=2)
+reviews.pmi2$PMI_n = pmi_n
+
+reviews.pmi2 %>% 
+  ggplot(aes(x=positive+negative, y=PMI_p-PMI_n, color=5*PMI_p-PMI_n, label=words)) +
+  scale_color_gradient2(low="red", high="blue") +
+  geom_point()
+
+reviews.pmi2 %>% 
+  ggplot(aes(x=positive+negative, y=PMI_p-PMI_n, color=5*PMI_p-PMI_n, label=words)) +
+  scale_color_gradient2(low="red", high="blue") +
+  geom_text(check_overlap = TRUE)
+```
+
+## N-граммы
+
+Пока что единицей измерения текста у нас были отдельные слова. Тем самым мы полностью игнорировали информацию о последовательности слов в тексте. По этой причине векторное представление документа еще называют «мешком слов» (bag of words), потому что мы рассматриваем набор слов, но не их порядок. Однако есть простой способ, принципиально не меняя наших инструментов измерения текста, инкорпорировать в них информацию о последовательности слов — *n-граммы*. Вместо одного слова возьмем в качестве единицы несколько стоящих подряд слов. 
+
+```{r}
+library(tidyverse)
+library(tidytext)
+
+
+reviews.bigrams = reviews %>% 
+  unnest_tokens(bigram, lem, token = "ngrams", n = 2)
+
+reviews.bigrams %>% 
+  dplyr::count(bigram, sort = TRUE)
+
+reviews.bifiltered = reviews.bigrams %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  filter(!word1 %in% rustopwords) %>% 
+  filter(!word2 %in% rustopwords) 
+
+reviews.bifiltered %>% 
+  dplyr::select(word1, word2) %>% 
+  dplyr::count(word1, word2, sort = TRUE)
+
+reviews.bifiltered %>% 
+  filter(word2 == "центр") %>% 
+  dplyr::count(word1, word2, sort=TRUE) %>%
+  dplyr::select(word1, word2, n)
+
+reviews.bifiltered %>% 
+  filter(word2 == "центр") %>% 
+  dplyr::count(rating, word1, sort=TRUE) %>% 
+  filter(rating<3)
+
+reviews.bigrams = reviews.bifiltered %>% 
+  unite(bigram, word1, word2, sep = " ")
+
+```
+
+**Задание**
+
+1. Посчитайте биграммы для слов из тематических словарей + картинки
+
+```{r}
+sights =c("площадь", "собор", "невский", "исаакиевский", "достопримечательность", "парк")
+transport = c("метро", "вокзал", "аэропорт", "центр", "станция", "московский", "близость", "пешком")
+meal = c("чай", "еда", "завтрак", "бар", "ресторан", "кофе", "шведский")
+furniture = c("мебель","белье","кровать")
+
+
+reviews.bifiltered %>% 
+  filter(word1 %in% sights | word2 %in% sights ) %>% 
+  dplyr::count(rating, word1, word2, sort = TRUE)
+
+
+# допонительно
+reviews.trigrams = reviews %>% 
+  unnest_tokens(bigram, lem, token = "ngrams", n = 3)
+
+reviews.trigrams %>% 
+  dplyr::count(bigram, sort = TRUE)
+
+reviews.bifiltered = reviews.trigrams %>% 
+  separate(bigram, c("word1", "word2", "word3"), sep = " ") %>% 
+  filter(!word1 %in% stopwords::stopwords("ru")) %>% 
+  filter(!word2 %in% stopwords::stopwords("ru")) %>%
+  filter(!word3 %in% stopwords::stopwords("ru"))
+
+reviews.bifiltered %>% 
+  dplyr::select(word1, word2, word3) %>% 
+  dplyr::count(word1, word2, word3, sort = TRUE)
+
+reviews.bifiltered %>% 
+  filter(word1 == "ужасный") %>% 
+  dplyr::count(word1, word2,word3, sort=TRUE) %>%
+  dplyr::select(word1, word2,word3, n)
+
+reviews.bifiltered %>% 
+  filter(word2 == "центр") %>% 
+  dplyr::count(rating, word1, sort=TRUE) %>% 
+  filter(rating>3)
+
+reviews.trigrams = reviews.bifiltered %>% 
+  unite(bigram, word1, word2,word3, sep = " ")
+```
+
+
+2(*). Оцените, какие слова наиболее специфичны для отрицательных (1-2) и положительных (5) отзывов, не ограничиваяюсь только лексикой из словаря Четверкина, а учитывая полные тексты отзывов. Постройте облака слов и диаграмму рассеяния, иллюстрирующую, какие слова характерны для каждого класса отзывов.
+
+## Тематическое моделирование
+
+Как можно составить свои словари для анализа сентимента мы посмотрели, а как можно составить свои словари по темам?
+
+Сформулируем задачу следующим образом: имеется коллекция документов. Хотим обнаружить «темы», из которых она сформирована.
+
+LDA (Latent Dirichlet Allocation):
+
+* Каждый документ представляет собой смесь тем.
+* «Тема» — набор слов, которые могут с разными вероятностями употребляться при обсуждении данной темы.
+
+Соответственно, у каждого документа в коллекции — свое распределение тем (в одном документе представлены только некоторые темы коллекции).
+
+![](http://journalofdigitalhumanities.org/wp-content/uploads/2013/02/blei_lda_illustration.png)
+
+Больше информации о тематическом моделировании:
+
+* [Topic modelling in Text Mining with R](http://tidytextmining.com/topicmodeling.html)
+* [topicmodels package](https://cran.r-project.org/web/packages/topicmodels/vignettes/topicmodels.pdf)
+
+Метод достаточно ресурсоемкий, поэтому код разбирать не будем, но на результат посмотрим
+
+### Тема как смесь слов
+
+Разделим на две темы и посмотрим на самые популярные слова в каждой теме.
+
+![](https://pp.userapi.com/c847216/v847216868/1ac1df/9r1YIVdfD1s.jpg)
+
+К сожалению, по такому набору сложно сказать, чем темы отличаются друг от друга, есть слова, которые встречаются в каждой из тем. Для сравнения тем между собой можно вычислять, насколько встречаемость слов различна между темами. Для этого используют логарифм отношения вероятностей $log_{2}(\beta_{1}/\beta_{2})$ (если $\beta_{1}$ в два раза больше, то это значение равно 1, если наоборот, то -1).
+
+Что можно сказать про эти темы?
+
+![](https://pp.userapi.com/c847216/v847216868/1ac1e6/c3sp5NTwyjw.jpg)
+
+### Документы как смесь тем
+
+Каждый отзыв в той или иной пропорции относится к каждой из тем. Например, на 60% к первой, а на 40% -- ко второй
+
+# Задание: корпус миротворцев
+
+
+Датасет, который мы будем анализировать, это база из 1617 ангоязычных статей с сайта ООН, содержащих слово "peacekeeper" и написанных в промежуток между 2001 и 2016 годами. В данных содержится числовой идентификатор статьи (id), её название (title), текст статьи (text) и лемматизированный текст (text_lem).
+
+```{r}
+news = read.csv("~/shared/minor2_2018/2-tm-net/lab04-sent_topics/UN_news_peacekeepers.csv", stringsAsFactors=FALSE)
+```
+
+# Задание 1
+
+Первое задание посвящено анализу частотности слов по текстам. 
+Вам необходимо: 
+
+1. Токенизировать тексты. Единицей анализа будет слово
+```{r}
+news.tidy = news %>% unnest_tokens(words, text_lem)
+news.tidy %>% dplyr::count(words, sort = TRUE)
+```
+
+2. Посчитать количество уникальных слов в текстах 
+```{r}
+news.tidy %>% dplyr::count(words) %>% nrow()
+news.tidy %>% dplyr::select(words) %>% n_distinct()
+
+```
+
+3. Удалить стопслова 
+
+```{r}
+# список стопслов на английском
+stopwords("en")
+?stopwords_getlanguages
+
+news.tidy2 = news.tidy %>% filter(!words %in%  stopwords("en"))
+```
+
+4. Посчитать как часто встречается каждое слово
+
+```{r}
+words_count = news.tidy2 %>% 
+  dplyr::count(words) 
+```
+
+5. Удалить слишком редкие (n < 5) и, наоборот, слишком распространенные слова (1% самых употребляемых слов) 
+```{r}
+words_count2 = words_count %>% filter(n >= 5 & n < quantile(words_count$n, .99))
+```
+
+6. Визуализируйте 15 самых употребляемых слов из оставшегося списка. Сделайте это с помощью столбчатой диаграммы (bar chart) или облака слов
+```{r}
+words_count2 %>% arrange(-n) %>% top_n(15, n)
+```
+
+# Задание 2. TF-IDF и Cosine similarity
+
+Теперь мы переходим к анализу частотных распределений по текстам. Сейчас мы попробуем найти схожие по тематике тексты.
+
+Продолжая работать с очищенной базой, которую вы создали в предыдущем задании надо сделать следующее:
+
+1. Удалить новостные статьи в которых осталось меньше 5 слов
+```{r}
+news.tidy3 = news.tidy2 %>% filter(words %in% (words_count %>% filter(n >= 5))$words)
+a = news.tidy3 %>% dplyr::count(words, sort = TRUE)
+
+```
+
+2. Посчитать метрику TF-IDF для получения взвешанной частотности слов (bind_tf_idf())
+* TF — term frequency (частота слова в документе) 
+* IDF — inverse documemnt frequency (обратная документная частота:
+  логарифм отношения количества документов в коллекции к числу
+  документов, в которых встречается данное слово)
+  
+```{r}
+
+```
+
+3. Привести данные к широкому формату (term-document matrix) (spread())
+
+4. Записать в новую переменную отфильтрованную базу, где будут только статьи с идентификаторами, записанными в переменную texts_id:
+
+```{r}
+texts_id = c("253", "252", "917", "901", "904", "910")
+```
+
+5. Посчитать косинусное расстояние для каждой пары текстов в этой базе (функция lsa::cosine). Найти тексты наиболее похожие друг на друга. Выведите их названия. О чем они?
+
+# Задание 3. Sentiment analysis
+
+Попробуем проанализировать эмоциональную окраску (оценку) статей про миротворцев. 
+Для этого мы воспользуемся словарем, который называется AFINN. В нем словам соответствует числовая оценка их эмоциональности от -5 (крайне негативная) до 5 (крайне позитивная).
+
+```{r}
+sentdict = get_sentiments("afinn")
+
+head(sentdict)
+tail(sentdict)
+```
+
+1. Снова берем изначальную базу статей о миротворцах, токенизируем и добавляем новую колонку с оценкой сентимента.  
+
+2. Посчитатайте среднее по числовым оценкам сентимента для каждой статей
+
+3. Найдите три самых позитивных статьи. Выведите их названия
+
+4. Найдите три самых негативных статьи. Выведите их названия
+
+
+

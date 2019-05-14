@@ -1,0 +1,72 @@
+## Regular expression
+====================
+
+* Sequence of (meta) characters
+* Patterm existence
+* Patterm replacement
+* Patterm extraction
+* grep(), grepl()
+* sub(), gsub()
+
+#1. grepl()
+```{r}
+animals = c("cat", "mouse", "impala", "ant", "kiwi")
+
+```
+
+`grepl(pattern = <regex>, x = <string>)`
+
+```{r}
+grepl(pattern = "a", x = animals)
+```
+pattern is in each elements of x or not
+
+```{r}
+grepl(pattern = "^a", x = animals)
+
+```
+
+
+```{r}
+?regex
+```
+
+#2. grep:
+
+```{r}
+animals = c("cat", "mouse", "impala", "ant", "kiwi")
+
+```
+
+`grepl(pattern = <regex>, x = <string>)`
+
+```{r}
+grep(pattern = "a", x = animals)
+```
+return elements in x that include pattern
+
+it is same with which(grepl())
+```{r}
+which(grepl(pattern = "a", x = animals))
+```
+```{r}
+grep(pattern = "^a", x = animals)
+```
+
+#3. sub, gsub
+`sub(pattern = <regex>, replacement = <str>, x = <str>)`
+
+```{r}
+sub(pattern = 'a', replacement = 'o', x = animals)
+```
+
+```{r}
+gsub(pattern = "a", replacement = "o", x = animals)
+```
+
+```{r}
+gsub(pattern = "a|i", replacement = "_", x = animals)
+sub(pattern = "a|i", replacement = "_", x = animals)
+
+```
+

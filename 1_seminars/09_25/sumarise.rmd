@@ -1,0 +1,9 @@
+```{r}
+library(nycflights13)
+library(dplyr)
+library(ggplot2)
+flData = nycflights13::flights
+flData = group_by(year, month, day)
+a = summarise(flData, mean_dif = mean(dep_arr_dif))
+a
+```

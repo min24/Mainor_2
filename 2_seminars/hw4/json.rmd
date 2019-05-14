@@ -1,0 +1,33 @@
+```{r}
+js = '{  
+   "contracts":[  
+      {  
+         "contractid":"BemDRHtv17",
+         "cid":"",
+         "category":"WORK",
+         "mainCategory":"Grundeinkommen",
+         "configured":false,
+         "customMainCategory":null,
+         "customSubCategory":null,
+         "customContractPartner":null,
+         "amount":209200,
+         "interval":"MONTHLY",
+         "runTime":null,
+         "periodOfNotice":null,
+         "cancelationAlert":null,
+         "extensionPeriod":null,
+         "contractPartner":{  
+            "creditorId":null,
+            "name":null,
+            "__typename":"ContractPartner"
+         },
+         "__typename":"Contract"
+      }'
+
+
+library(jqr)
+
+jq(js, ".contracts[].mainCategory")
+js
+```
+

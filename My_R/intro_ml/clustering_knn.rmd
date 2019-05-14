@@ -1,0 +1,304 @@
+#1. k-means: how well did you do earlier?
+Remember the `seeds` dataset from Chapter 2 which you clustered using the k-means method? Well, we've found the labels of the seeds. They are stored in the vector `seeds_type`; there were indeed three types of seeds!
+
+While clusters are made without the use of true labels, if you happen to have them, it is simply interesting to see how well the clusters you made correspond to these true labels.
+
+It's up to you now to cluster the instances in `seeds` and compare the resulting clusters with `seeds_type`. Both objects are available in your workspace.
+
+
+* Group the `seeds` in three clusters using *kmeans()*. Set `nstart` to 20 to let R randomly select the centroids 20 times. Assign the result to `seeds_km`.
+* Print out `seeds_km` to see what it contains.
+* Compare the resulting clusters, in the cluster component of `seeds_km`, with `seeds_type` using the *table()*
+function.
+* Plot the `length` as function of `width`, using *plot()*. Set the `col` argument to `seeds_km$cluster`. And use the comma format by specifying the `x` and `y` arguments explicitly, not with the formula format using `~`.
+
+```{r}
+
+```
+
+```{r}
+library(readr)
+# seeds and seeds_type are pre-loaded in your workspace
+seeds = read_csv("./dataset/seeds.csv")
+seeds_type = c(rep(1, 70), rep(2, 70), rep(3, 70))
+
+# Set random seed. Don't remove this line.
+set.seed(100)
+
+# Do k-means clustering with three clusters, repeat 20 times: seeds_km
+seeds_km = kmeans(seeds, centers = 3, nstart = 20)
+
+# Print out seeds_km
+seeds_km
+
+# Compare clusters with actual seed types. Set k-means clusters as rows
+table(seeds_km$cluster, seeds_type)
+
+# Plot the length as function of width. Color by cluster
+plot(seeds$width, seeds$length, col = seeds_km$cluster)
+```
+
+#2. The influence of starting centroids
+If you call *kmeans()* without specifying your centroids, R will randomly assign them for you. In this exercise, you will see the influence of these starting centroids yourself using the `seeds` dataset.
+
+To compare the clusters of two cluster models, you can again use *table()*. If every row and every column has one value, the resulting clusters completely overlap. If this is not the case, some objects are placed in different clusters.
+
+* Group `seeds` in 5 clusters using *kmeans()*. Set `nstart` to 1. Assign the result to `seeds_km_1`.
+* Repeat the first instruction, again with `nstart` equal to 1, but assign to `seeds_km_2` this time.
+* Print the ratio of the WSS, which is stored in the `tot.withinss` element of `seeds_km_1` and `seeds_km_2`. Put the first one in the numerator.
+* Compare the resulting `clusters` (it's in the cluster column) using *table()*. Put the clusters of `seeds_km_1` in the rows.
+
+```{r}
+# seeds is pre-loaded in your workspace
+seeds = read_csv("./dataset/seeds.csv")
+
+# Set random seed. Don't remove this line.
+set.seed(100)
+
+# Apply kmeans to seeds twice: seeds_km_1 and seeds_km_2
+seeds_km_1 = kmeans(seeds, centers = 5,nstart = 1)
+seeds_km_2 = kmeans(seeds, centers = 5,nstart = 1)
+
+# Return the ratio of the within cluster sum of squares
+seeds_km_1$tot.withinss/seeds_km_2$tot.withinss
+
+# Compare the resulting clusters
+table(seeds_km_1$cluster, seeds_km_2$cluster)
+```
+
+#3. Making a scree plot!
+Let's move on to some new data: school results! You're given a dataset `school_result` containing school level data recording reading and arithmetic scores for each school's 4th and 6th graders. (Source: *cluster.datasets package*). We're wondering if it's possible to define distinct groups of students based on their scores and if so how many groups should we consider?
+
+Your job is to cluster the schools based on their scores with k-means, for different values of `k`. On each run, you'll record the ratio of the within cluster sum of squares to the total sum of squares. The scree plot will tell you which `k` is optimal!
+
+* Explore your data using *str()*.
+* Initialize a vector of length 7, `ratio_ss`, that contains all zeros. You can use *rep()*.
+* Finish the for-loop that runs over `k`:
+* Group your data in `k` clusters; set `nstart` to 20. Assign the result to `school_km`.
+* Save the corresponding ratio `tot.withinss` to totss in the vector `ratio_ss` at index `k`. These values are found in the `school_km` object.
+* Plot the `ratio_ss`. Set the type argument in *plot()* to `"b"`, connecting the points. Also set the `xlab` argument to `"k"`.
+
+
+```{r}
+# The dataset run_record has been loaded in your workspace
+run_record = read_csv("./dataset/run_record.csv")
+# Set random seed. Don't remove this line.
+set.seed(1)
+
+# Explore your data with str() and summary()
+str(run_record)
+summary(run_record)
+# Cluster run_record using k-means: run_km. 5 clusters, repeat 20 times
+run_km = kmeans(run_record, centers = 5, nstart = 20)
+
+# Plot the 100m as function of the marathon. Color using clusters
+plot(run_record$marathon, run_record$X100m, col = run_km$cluster)
+
+# Calculate Dunn's index: dunn_km. Print it.
+dunn_km = dunn(clusters = run_km$cluster, Data = run_record)
+dunn_km
+```
+
+
+#5. Standardized vs non-standardized clustering (2)
+You expected it already, the unstandardized clusters don't produce satisfying results. Let's see if standardizing helps!
+
+Your job is the standardize the `run_record` dataset and apply the k-means algorithm again. Calculate Dunn's index and compare the results!
+
+* Standardize the `run_record` using *scale()*. Apply *as.data.frame()* on the result and assign to `run_record_sc`.
+* Cluster `run_record_sc` in 5 groups; set `nstart` to 20. Assign your result to `run_km_sc`.
+* Make a scatter plot with the `marathon` variable on the x-axis and `X100m` on the y-axis. Use the original dataset, `run_record`! Color your points using your cluster. Label your axes!
+* Compare the resulting clusters with the previous clusters, in `run_km`, using *table()*. Set the unstandardized clusters as rows.
+* Calculate Dunn's index with the *dunn()* function. Store the result in `dunn_km_sc` and print it out.
+
+```{r}
+# The dataset run_record as well as run_km are available
+run_record = read_csv("./dataset/run_record.csv")
+# Set random seed. Don't remove this line.
+set.seed(1)
+
+# Standardize run_record, transform to a dataframe: run_record_sc
+run_record_sc = as.data.frame(scale(run_record))
+run_record_sc
+# Cluster run_record_sc using k-means: run_km_sc. 5 groups, let R start over 20 times
+run_km_sc = kmeans(run_record_sc, centers = 5, nstart = 20)
+
+# Plot records on 100m as function of the marathon. Color using the clusters in run_km_sc
+plot(run_record$marathon, run_record$X100m, col = run_km_sc$cluster)
+
+# Compare the resulting clusters in a nice table
+table(run_km$cluster, run_km_sc$cluster)
+
+# Calculate Dunn's index: dunn_km_sc. Print it.
+dunn_km_sc = dunn(clusters = run_km_sc$cluster, Data = run_record_sc)
+dunn_km_sc
+```
+
+#6. Single Hierarchical Clustering
+Let's return to the Olympic records example. You've already clustered the countries using the k-means algorithm, but this gave you a fixed amount of clusters. We're interested in more!
+
+In this exercise, you'll apply the hierarchical method to cluster the countries. Of course, you'll be working with the standardized data. Make sure to visualize your results!
+
+* Calculate the Euclidean distance matrix of `run_record_sc` using *dist()*. Assign it to `run_dist`. *dist()* uses the Euclidean method by default.
+* Use the `run_dist` matrix to cluster your data hierarchically, based on single-linkage. Use *hclust()* with two arguments. Assign it to run_single.
+* Cut the tree using *cutree()* at 5 clusters. Assign the result to `memb_single`.
+* Make a dendrogram of `run_single` using *plot()*. If you pass a hierarchical clustering object to *plot()*, it will draw the dendrogram of this clustering.
+* Draw boxes around the 5 clusters using *rect.hclust()*. Set the border argument to 2:6, for different colors.
+
+```{r}
+# The dataset run_record_sc has been loaded in your workspace
+run_record = read_csv("./dataset/run_record.csv")
+run_record_sc = as.data.frame(scale(run_record))
+
+# Apply dist() to run_record_sc: run_dist
+run_dist = dist(run_record_sc)
+
+# Apply hclust() to run_dist: run_single
+run_single = hclust(run_dist, method="single")
+
+# Apply cutree() to run_single: memb_single
+memb_single = cutree(run_single, 5)
+
+# Apply plot() on run_single to draw the dendrogram
+plot(run_single)
+
+# Apply rect.hclust() on run_single to draw the boxes
+rect.hclust(run_single, 5, border=2:6)
+```
+
+#7. Complete Hierarchical Clustering
+The clusters of the last exercise weren't truly satisfying. The single-linkage method appears to be placing each outlier in its own cluster. Let's see if complete-linkage agrees with this clustering!
+
+In this exercise, you'll repeat some steps from the last exercise, but this time for the complete-linkage method. Visualize your results and compare with the single-linkage results. A model solution to the previous exercise is already available to inspire you. It's up to you to add code for complete-linkage.
+
+
+* Use the `run_dist` matrix to cluster your data hierarchically, based on complete-linkage. Use *hclust()*. Assign it to `run_complete`.
+* Cut the tree using *cutree()* at 5 clusters. Assign the result to `memb_complete`.
+* Make a dendrogram of `run_complete` using *plot()*.
+* Superimpose boxes with *rect.hclust()*; set the border argument to `2:6` again.
+* Compare the membership between the single and the complete linkage clusterings, using *table()*.
+
+```{r}
+# run_record_sc is pre-loaded
+run_record = read_csv("./dataset/run_record.csv")
+run_record_sc = as.data.frame(scale(run_record))
+# Code for single-linkage
+run_dist <- dist(run_record_sc, method = "euclidean")
+run_single <- hclust(run_dist, method = "single")
+memb_single <- cutree(run_single, 5)
+plot(run_single)
+rect.hclust(run_single, k = 5, border = 2:6)
+
+# Apply hclust() to run_dist: run_complete
+run_complete = hclust(run_dist, method="complete")
+
+# Apply cutree() to run_complete: memb_complete
+memb_complete = cutree(run_complete, 5)
+
+# Apply plot() on run_complete to draw the dendrogram
+plot(run_complete)
+
+# Apply rect.hclust() on run_complete to draw the boxes
+rect.hclust(run_complete, 5, border = 2:6)
+
+# table() the clusters memb_single and memb_complete. Put memb_single in the rows
+table(memb_single, memb_complete)
+```
+
+#7. Hierarchical vs k-means
+So you've clustered the countries based on their Olympic run performances using three different methods: k-means clustering, hierarchical clustering with single linkage and hierarchical clustering with complete linkage. You can ask yourself: which method returns the best separated and the most compact clusters?
+
+Let's use Dunn's index. Remember, it returns the ratio between the minimum intercluster distance to the maximum intracluster diameter. The *dunn()* function in R, requires the argument `clusters`, indicating the cluster partitioning, the `Data` and a `method` to determine the distance. In this case, that's `"euclidean"`, which is the default.
+
+Your job is to calculate Dunn's index for all three clusterings and compare the clusters to each other. The R objects you calculated in the previous exercises are already available in your workspace.
+
+* Calculate Dunn's index on the k-means clusters in `run_km_sc`. Assign the result to `dunn_km`. Use the function *dunn()*.
+* Do the same for the single-linkage clusters, which can be found in `memb_single`, and assign the index to `dunn_single`.
+* Same thing for `memb_complete`, this time resulting in a Dunn's index `dunn_complete`.
+* Compare the k-means clusters to the single-linkage clusters with *table()*. Place the k-means cluster assignments in the table rows.
+* Compare the k-means clusters to the complete-linkage clusters with *table()*. Place the k-means cluster assignments in the table rows.
+
+```{r}
+run_record = read_csv("./dataset/run_record.csv")
+run_record_sc = as.data.frame(scale(run_record))
+run_km_sc = kmeans(run_record_sc, centers = 5, nstart = 20)
+run_dist <- dist(run_record_sc, method = "euclidean")
+run_single <- hclust(run_dist, method = "single")
+memb_single <- cutree(run_single, 5)
+run_complete = hclust(run_dist, method="complete")
+memb_complete = cutree(run_complete, 5)
+
+
+# run_record_sc, run_km_sc, memb_single and memb_complete are pre-calculated
+
+# Set random seed. Don't remove this line.
+set.seed(100)
+
+# Dunn's index for k-means: dunn_km
+dunn_km = dunn(clusters = run_km_sc$cluster, Data = run_record_sc)
+dunn_km
+# Dunn's index for single-linkage: dunn_single
+dunn_single = dunn(clusters = memb_single, Data = run_record_sc)
+
+# Dunn's index for complete-linkage: dunn_complete
+dunn_complete = dunn(clusters = memb_complete, Data = run_record_sc)
+
+# Compare k-means with single-linkage
+table(run_km_sc$cluster, memb_single)
+
+# Compare k-means with complete-linkage
+table(run_km_sc$cluster, memb_complete)
+```
+
+
+#8. Clustering US states based on criminal activity
+You've seen that different clustering methods can return entirely different clusters, each with their own interpretation and uses. It's time to put your skills, both the programming and the interpretation, to the test!
+
+Your client has provided you with a dataset, `crime_data`, containing info on the crimes committed in each of the 50 US states and the percentage of urban population (Source: Edureka). He'd like you to group the states in 4 clusters. He didn't specify which similarity to use, but the `euclidean` distance seems acceptable, don't you agree?
+
+You decide to try out two techniques: k-means and single-linkage hierarchical clustering. You then want to compare the results by calculating the Dunn's indices to make a conclusion. Which clustering will you deliver to your client?
+
+
+
+* Scale the data using *scale()*. Call the scaled dataset `crime_data_sc`.
+* Apply *kmeans()* to this scaled dataset. You want 4 clusters. Assign the result to `crime_km`. Set the nstart argument to 20 to achieve a robust result.
+* Apply single-linkage hierarchical clustering by following these steps:
+* Calculate the distance matrix using *dist()*. Call it `dist_matrix`.
+* Call *hclust()* to perform the single-linkage hierarchical clustering, use `dist_matrix` here. Call the resulting object `crime_single`.
+* Cut the tree in 4 clusters with *cutree()*. Call the result `memb_single`.
+* Use *dunn()* to calculate the the Dunn's index. You should use `crime_km$cluster` as a first argument to calculate this for the k-means clustering, call it `dunn_km`. Use `memb_single` as a first argument to calculate this for the hierarchical clustering, call it `dunn_single`.
+* Print out the results in `dunn_km` and `dunn_single`.
+
+
+```{r}
+crime_data = read_csv("./dataset/crime_data.csv")
+# Set random seed. Don't remove this line.
+set.seed(1)
+
+# Scale the dataset: crime_data_sc
+crime_data_sc = scale(crime_data)
+
+# Perform k-means clustering: crime_km
+crime_km = kmeans(crime_data_sc, centers = 4, nstart = 20)
+
+# Perform single-linkage hierarchical clustering
+## Calculate the distance matrix: dist_matrix
+dist_matrix = dist(crime_data_sc, method="euclidean")
+
+## Calculate the clusters using hclust(): crime_single
+crime_single = hclust(dist_matrix, method="single")
+
+## Cut the clusters using cutree: memb_single
+memb_single = cutree(crime_single, k = 4)
+
+# Calculate the Dunn's index for both clusterings: dunn_km, dunn_single
+dunn_km = dunn(clusters = crime_km$cluster, Data = crime_data_sc)
+dunn_single = dunn(clusters = memb_single, Data = crime_data_sc)
+# Print out the results
+dunn_km
+dunn_single
+
+```
+
+
+

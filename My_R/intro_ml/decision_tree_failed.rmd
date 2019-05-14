@@ -1,0 +1,143 @@
+#1. Learn a decision tree
+As a big fan of shipwrecks, you decide to go to your local library and look up data about Titanic passengers. You find a data set of 714 passengers, and store it in the titanic data frame (Source: Kaggle). Each passenger has a set of features - Pclass, Sex and Age - and is labeled as survived (1) or perished (0) in the Survived column.
+
+To test your classification skills, you can build a decision tree that uses a person's age, gender, and travel class to predict whether or not they survived the Titanic. The titanic data frame has already been divided into training and test sets (named train and test).
+
+In this exercise, you'll need train to build a decision tree. You can use the rpart() function of the rpart package for this. Behind the scenes, it performs the steps that Vincent explained in the video: coming up with possible feature tests and building a tree with the best of these tests.
+
+Finally, a fancy plot can help you interpret the tree. You will need the rattle, rpart.plot, and RColorBrewer packages to display this.
+
+Note: In problems that have a random aspect, the set.seed() function is used to enforce reproducibility. Don't worry about it, just don't remove it!
+
+
+
+Load in all the packages that are mentioned above with library().
+
+Use rpart() to learn a tree model and assign the result to tree. You should use three arguments:
+
+The first one is a formula: Survived ~ .. This represents the function you're trying to learn. We're trying to predict the Survived column, given all other columns (writing . is the same as writing Pclass + Sex + Age in this formula).
+The second one is the dataset on which you want to train. Remember, training is done on the train set.
+Finally, you'll have to set method to "class" to tell rpart this is a classification problem.
+Create a plot of the learned model using fancyRpartPlot(). This function accepts the tree model as an argument.
+
+
+
+```{r}
+# The train and test set are loaded into your workspace.
+train = read_csv("./dataset/train.csv")
+train = train %>% select(Survived, Pclass, Sex, Age)
+# Set random seed. Don't remove this line
+set.seed(1)
+
+# Load the rpart, rattle, rpart.plot and RColorBrewer package
+library(rpart)
+#install.packages("rattle")
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
+
+# Fill in the ___, build a tree model: tree
+tree <- rpart(Survived ~ ., train, method="class")
+
+# Draw the decision tree
+#fancyRpartPlot(tree)
+rpart.plot(tree)
+
+```
+
+#2. Classify with the decision tree
+The previous learning step involved proposing different tests on which to split nodes and then to select the best tests using an appropriate splitting criterion. You were spared from all the implementation hassles that come with that: the rpart() function did all of that for you.
+
+Now you are going to classify the instances that are in the test set. As before, the data frames titanic, train and test are available in your workspace. You'll only want to work with the test set, though.
+
+
+Use tree to predict the labels of the test set with the predict() function; store the resulting prediction in pred.
+Create a confusion matrix, conf, of your predictions on the test set. The true values, test$Survived, should be on the rows.
+Use the confusion matrix to print out the accuracy. This is the ratio of all correctly classified instances divided by the total number of classified instances, remember?
+
+```{r}
+# The train and test set are loaded into your workspace.
+
+# Code from previous exercise
+set.seed(1)
+library(rpart)
+tree <- rpart(Survived ~ ., train, method = "class")
+
+# Predict the values of the test set: pred
+pred = predict(tree, test, type="class")
+
+# Construct the confusion matrix: conf
+conf = table(test$Survived, pred)
+
+
+# Print out the accuracy
+sum(diag(conf))/sum(conf)
+```
+
+#3. Pruning the tree
+A like-minded shipwreck fanatic is also doing some Titanic predictions. He passes you some code that builds another decision tree model. The resulting model, tree, seems to work well but it's pretty hard to interpret. Generally speaking, the harder it is to interpret the model, the more likely you're overfitting on the training data.
+
+You decide to prune his tree. This implies that you're increasing the bias, as you're restricting the amount of detail your tree can model. Finally, you'll plot this pruned tree to compare it to the previous one.
+
+
+A model, tree is already coded on the right. Use fancyRpartPlot() to plot it. What do you think?
+Use the prune() method to shrink tree to a more compact tree, pruned. Also specify the cp argument to be 0.01. This is a complexity parameter. It basically tells the algorithm to remove node splits that do not sufficiently decrease the impurity.
+Take a look at this pruned tree by drawing a fancy plot of the pruned tree. Compare the two plots.
+
+```{r}
+# All packages are pre-loaded, as is the data
+train = read_csv("./dataset/train.csv")
+train = train %>% select(Survived, Pclass, Sex, Age)%>% na.omit()
+# Calculation of a complex tree
+set.seed(1)
+tree <- rpart(Survived ~ ., train, method = "class", control = rpart.control(cp=0.00001))
+# Draw the complex tree
+fancyRpartPlot(tree)
+
+# Prune the tree: pruned
+pruned = prune(tree, cp=0.01)
+
+# Draw pruned
+fancyRpartPlot(pruned)
+```
+
+#4. Splitting criterion
+Do you remember the spam filters we built and tested in chapter 1 and 2? Well, it's time to make the filter more serious! We added some relevant data for every email that will help filter the spam, such as word and character frequencies. All of these can be found in the emails dataset, which is loaded in your workspace. Also, a training and test set have already been built from it: train and test.
+
+In this exercise, you'll build two decision trees based on different splitting criteria. In the video you've learned about information gain: the higher the gain when you split, the better. However, the standard splitting criterion of rpart() is the Gini impurity.
+
+It is up to you now to compare the information gain criterion with the Gini impurity criterion: how do the accuracy and resulting trees differ?
+
+Have a look at the code that computes tree_g, pred_g, conf_g and acc_g. Here, the tree was trained with the Gini impurity criterion, which rpart() uses by default.
+Change the arguments of the rpart() function in the next block of code so that it will split using the information gain criterion. It is coded as "information". The code that calculates pred_i, conf_i and acc_i is already there.
+Draw a fancy plot of tree_g and tree_i using fancyRpartPlot().
+Print out the accuracy of both the first and second models.
+
+```{r}
+# All packages, emails, train, and test have been pre-loaded
+
+# Set random seed. Don't remove this line.
+set.seed(1)
+
+# Train and test tree with gini criterion
+tree_g <- rpart(spam ~ ., train, method = "class")
+pred_g <- predict(tree_g, test, type = "class")
+conf_g <- table(test$spam, pred_g)
+acc_g <- sum(diag(conf_g)) / sum(conf_g)
+
+# Change the first line of code to use information gain as splitting criterion
+tree_i <- rpart(spam ~ ., train, method = "class", parms = list(split = "information"))
+pred_i <- predict(tree_i, test, type = "class")
+conf_i <- table(test$spam, pred_i)
+acc_i <- sum(diag(conf_i)) / sum(conf_i)
+
+# Draw a fancy plot of both tree_g and tree_i
+fancyRpartPlot(tree_g)
+fancyRpartPlot(tree_i)
+
+
+# Print out acc_g and acc_i
+acc_g
+acc_i
+```
+

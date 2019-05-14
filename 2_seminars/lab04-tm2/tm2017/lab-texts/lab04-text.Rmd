@@ -1,0 +1,246 @@
+---
+title: "Text Mining"
+date: "20 02 2017"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+В этот раз мы поработаем с текстом и познакомимся с пакетами для обработки натурального языка.
+
+* tidytext
+* stringr
+* wordcloud
+
+По ссылке можно найти книжку по tidytext http://tidytextmining.com/index.html
+
+# Формат данных
+
+Большинство пакетов для обработки текстов воспринимают три формата
+
+* Raw strings in character vectors - обычный текст в колонке
+* Corpus - объекты, содержащие строки с анотацией в виде метаданных
+* Term-document matrix - матрица слов и документов, каждая строка - документ (например твит), каждый столбец - слово, в ячейках частоты слов в документе
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+library(readr)
+library(lubridate)
+
+ufo = read_tsv("~/shared/minor2_2016/lab06-lubridate/ufo_awesome.tsv", col_names=F)
+
+# naming columns
+colnames(ufo) = c("Sighted", "Reported", "Location", "Shape", "Duration", "Description")
+ufo$Description <- iconv(ufo$Description, "latin1")
+ufo$Sighted = ymd(ufo$Sighted)
+ufo$Reported = ymd(ufo$Reported)
+
+```
+
+
+Поработаем со знакомой вам базой сообщений об НЛО. Для начала почистим текст.
+
+Посмотрите на колонку Description. Кажется из-за разных кодировок знаки апостров и цитирования отображаются текстом. Этот мусор нужно убрать.
+
+Пакет stringr работает с текстовыми строками.
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+library(stringr)
+
+#?str_replace_all
+
+ # Приводим все слова к нижнему регистру
+ufo$Description = tolower(ufo$Description)
+ufo$Description = str_replace_all(ufo$Description, "w/", "with")
+
+# Убирем то, что осталось от кавычек и апострофа
+ufo$Description = str_replace_all(ufo$Description, "\\&quot\\;", " ")
+ufo$Description = str_replace_all(ufo$Description, "\\&apos\\;", " ")
+
+# Некоторые сообщения начинаются со слова "Summary:". Уберем его
+ufo$Description = str_replace_all(ufo$Description, "summary", "")
+
+# Уберем всю пунктуацию
+ufo$Description = str_replace_all(ufo$Description, "[[:punct:]]", "")
+
+# И числа
+ufo$Description = str_replace_all(ufo$Description, "[0-9]+", "")
+
+```
+
+Теперь переделаем датасет в формат tidy text. Для этого нам необходимо разбить имеющиеся тексты на индивидуальные "токены" (сделать токенизацию). С этим поможет функция unnest_tokens(). Токен является значимой единицей текста (чаще всего словом), в которой мы заинтересованы для анализа. В формате tidy text - документ дублируется столько раз, сколько в нем токенов, в каждой строчке один токен (слово). Такой формат данных необходим для агрегации или построения графиков, например.
+
+Также уберем из данных "стоп-слова", то есть те слова, которые не представляют ценности для анализа (междометия, союзы и т.д.).
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+library(tidytext)
+library(dplyr)
+
+ufo_tidy <- ufo %>%
+  unnest_tokens(word, Description) %>% # разбиваем на слова
+  anti_join(stop_words) %>% #убираем стоп-слова
+  select(-Shape, -Duration)
+
+```
+
+Посмотрим, какие слова наиболее часто употребляют.
+Не удивительно, что в топе object и light. Наблюдаем проблему: light и lights считается за два разных слова. Как это можно исправить? 
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+library(ggplot2)
+
+ufo_tidy %>%
+  count(word, sort = TRUE) %>%
+  filter(row_number() < 15) %>%
+  ggplot(aes(x = reorder(word, n), y = n)) +
+  geom_col() +
+  labs(x = "word") + 
+  coord_flip() +
+  theme_minimal()
+
+```
+
+С помощью функции str_replace() замените lights на light и постройте облако слов.
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+### Ваш код здесь ###
+ufo_tidy$word = str_replace(ufo_tidy$word, "lights", "light")
+
+library(wordcloud)
+
+ufo_tidy %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))
+
+```
+
+## Sentiment analysis
+
+Пакет tidytext позволяет проводить анализ тональности текстов на английском языке.
+Он содержит несколько словарей с разметкой эмоциональной окраски слов.
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+library(tidyr)
+
+# ?get_sentiments
+
+sentiments <- ufo_tidy %>%
+  inner_join(get_sentiments(lexicon = "afinn"), by = "word") %>% # affin - название словаря с разметкой 
+  group_by(word) %>%
+  summarize(occurences = n(),
+            contribution = sum(score))
+
+sentiments %>%
+  top_n(25, abs(contribution)) %>%
+  mutate(word = reorder(word, contribution)) %>%
+  ggplot(aes(word, contribution, fill = contribution > 0)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  coord_flip()
+
+```
+
+## Реальный кейс: Шерлок в твиттере
+
+Датасет содержит 376 тыс твитов с хештегом #ночьшерлока
+Мы заранее убрали все ссылки и картинки из текста, а так же сделали лемматизацию т.е. привели все слова к начальной форме с помощью mystem. В колоночке raw - текст, каким мы его отдали в mystem, в колоночке text - выдача из mystem.
+
+Что такое mystem - https://tech.yandex.ru/mystem/doc/index-docpage/
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+
+sherlock <- read_csv("~/shared/minor2_2016/2-datatech/lab04-text/sherlock.csv")
+
+# Пунктуация не нужна
+sherlock$text <- str_replace_all(sherlock$text, "[[:punct:]]", " ")
+# Уберем числа
+sherlock$text <- str_replace_all(sherlock$text, "[0-9]+", " ")
+# Убирем остаток хештега
+sherlock$text <- str_replace(sherlock$text, "ночьшерлока", " ")
+
+# Пробелы в начале и в конце строк
+sherlock$text = str_trim(sherlock$text)
+
+# Отформатируем время
+sherlock$date = ymd_hms(as.character(sherlock$date))
+sherlock$hour = hour(sherlock$date)
+sherlock$day = day(sherlock$date)
+
+# Постройте гистограмму распределения твитов
+
+# ggplot(data=sherlock) + geom_histogram(...)
+
+```
+
+А теперь посмотрим, как обсужади героев. 
+Для каждого твита отметим, какие персонажи сериала в нем упоминаются.
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+
+sherlock$has_sherlock = str_detect(sherlock$text, " шерлок ") | 
+  str_detect(sherlock$text, " шерлоку ") | 
+  str_detect(sherlock$text, " шерлока ")
+
+sherlock$has_moriarti = str_detect(sherlock$text, "мориарти ") | 
+  str_detect(sherlock$text, "джим ") | 
+  str_detect(sherlock$text, "джиму ")
+
+sherlock$has_molly = str_detect(sherlock$text, "молли ")
+
+sherlock$has_hudson = str_detect(sherlock$text, "миссис хадсон ") | 
+  str_detect(sherlock$text, "хадсон ")
+
+sherlock$has_john = str_detect(sherlock$text, "джон ") | 
+  str_detect(sherlock$text, "джону ") | 
+  str_detect(sherlock$text, "джона ") | 
+  str_detect(sherlock$text, "ватсон ") | 
+  str_detect(sherlock$text, "ватсону ")
+
+sherlock$has_mery = str_detect(sherlock$text, "мэри ") | 
+  str_detect(sherlock$text, "мери ")
+
+sherlock$has_ever = str_detect(sherlock$text, "эвер ") | 
+  str_detect(sherlock$text, "эвэр ") | 
+  str_detect(sherlock$text, "эвр ")
+
+sherlock$has_mycroft = str_detect(sherlock$text, "майкрофт ") | 
+  str_detect(sherlock$text, "майкрофта ") | 
+  str_detect(sherlock$text, "майкрофту ")
+
+
+
+
+```
+
+Построим графики упоминаний героев!
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+df_second = dplyr::filter(sherlock, hour <= 4)
+
+df_second = tidyr::gather(df_second, character, pres, has_sherlock:has_mycroft)
+df_second = df_second %>% filter(pres)
+
+ggplot() + 
+  geom_freqpoly(data = df_second, aes(x = date, colour = character), binwidth = 300) +
+  xlab("Время") + ylab("Количество твитов") + 
+  ggtitle("#НочьШерлока в часы показа третьей серии") +
+  scale_color_discrete(name = "Упоминание", 
+                       breaks = c("has_sherlock", "has_moriarti", "has_molly", "has_hudson", 
+                                  "has_john", "has_mery", "has_ever", "has_mycroft"), 
+                       labels = c("Шерлок", "Мориарти", "Молли", "Хадсон", 
+                                  "Джон","Мери", "Эвер", "Майкрофт"))
+
+```
+
+```{r}
+sherlock_tidy <- sherlock %>%
+  unnest_tokens(word, text) # разбиваем на слова
+
+stop_names = data.frame(word=c("шерлок", "джон", "ватсон", "эвер", "майкрофт", "молли", "хадсон", "холмс", tm::stopwords("russian")))
+
+sherlock_tidy %>% filter(has_john) %>%  anti_join(stop_names) %>% count(word) %>%
+  with(wordcloud(word, n, max.words = 100))
+
+sherlock_tidy %>% filter(has_ever) %>%  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))
+```
+
+

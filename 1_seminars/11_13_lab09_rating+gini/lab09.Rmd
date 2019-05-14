@@ -1,0 +1,135 @@
+
+# Повторение
+
+Загрузим данные.
+
+```{r}
+credits = read_csv("~/shared/minor2_2018/1-intro/lab09-ratings+gini/credit-data.csv")
+```
+
+Сделаем простое правило. Даем кредиты только женатым людям с постоянной занятостью. 
+
+```{r}
+approval_condition = credits$job == "fixed" & credits$marital == "married"
+credits$credit_approval = ifelse(approval_condition, "good_approve", "bad_deny")
+  
+# хотим ли мы тут показать через filter то же самое?
+
+credits %>% 
+  select(id, status, credit_approval) %>% 
+  head()
+```
+
+# Как оценивать предсказательные модели?
+
+Самая простая метрика качества модели - точность! То, как часто модель предсказывает верные значения.
+
+```{r}
+conf = table(credits$credit_approval, credits$status)
+conf
+sum(diag(conf))/sum(conf)
+
+# example and fancy tables with highlights here
+```
+
+# Ограничения
+
+Точность далеко не всегда адекватно показывает качество модели.
+
+Бывают такие выборки в которых представленность одних классов (то, что предсказываем), оказывается непропорционально большой по сравениею с другими. Такие выборки называют несбалансированными. Точность модели может быть очень высокой просто потому, что второй класс оказывается "незаметен" и при оценки точности модели их оказывается "дешевле" игнорировать, чем пытаться предсказать.
+
+Кроме того ошибки классификации могут весить по-разному. 
+Примеры: 
+- важное письмо в спам *vs* письмо о "гарантированном увеличении точности предсказательно модели" во входящих
+- заблокированнать   операцию клиента банка *vs* не заблокировать списание денег мошенниками
+- выгнать студента с контрольной потому что показалось, что он списывает *vs* не выгнать списывающего студента
+- пропустить бракованную партию авиационных двигателей с завода *vs* отбраковать хорошие детали
+
+```{r}
+# пример таблицы с costs
+```
+
+# профит
+
+При решении реальных задачь посчитать количество верно и неверно предсказанных кейсов - недостаточно. Необходимо показать эффективность модели в значениях понятных заказчику-руководству. Например, выраженная в деньгах. Главное, это поможет понять вам самим, нужна ли такая модель, принесет ли она пользу. 
+
+Один из возможных вариантов - подсчет хххх. Для этого оценить стоимость ошибок. 
+
+```{r}
+# матрица стоимостей ошибок для какого-то кейса + описние кейса
+```
+
+ххх - считается как...
+
+```{r}
+
+```
+
+# Supervised segmentation - как считать эффективные разбиения?
+
+A Gini score gives an idea of how good a split is by how mixed the classes are in the two labeled groups created by the split. A perfect separation results in a Gini score of 0, whereas the worst case split that results in 50/50 classes. We calculate it for every row and split the data accordingly in our binary tree. We repeat this process recursively.
+
+```{r}
+# график с gini для разных сэмплов
+# руками считаем gini
+
+# Очень очень жестко имхо - чтобы это объяснить...
+credits %>% group_by(status, credit_approval) %>% summarize(count = n())
+
+# выбираем разбиение
+
+# второе правило, могут сами написать 
+approval_condition = credits$job == "fixed"
+credits$credit_approval1 = ifelse(approval_condition, "good_approve", "bad_deny")
+
+credits %>% 
+  group_by(status, credit_approval1) %>% 
+  summarize(count = n()) %>%
+  group_by(credit_approval1) %>%
+  mutate(count_segment = sum(count)) %>%
+  group_by(credit_approval1, count_segment) %>% 
+  summarise(gini = 1 - sum((count/count_segment)^2)) %>% 
+  mutate(w_gini = (sum(count_segment)/nrow(credits)) * gini) %>% 
+  ungroup() %>% 
+  summarize(w_gini = sum(w_gini))
+
+```
+
+```{r}
+# даю функцию для подсчета gini
+```
+
+# Кредитный скоринг (рейтинги)
+
+А можно ли принимать решения по кредитам как-то еще? 
+
+Надежность клиента можно оценивать не бинарно - отдаст/не отдаст. Можно представить некую шкале шкалу с баллами надежности. И за каждое совпадение по критериям, клиенту будут добавляются баллы. 
+
+```{r}
+credits$rating = 0
+credits$rating = ifelse(credits$marital == "fixed", credits$rating + 10, credits$rating)
+credits$rating = ifelse(credits$seniority > 2, credits$rating + 10, credits$rating)
+credits$rating = ifelse(credits$seniority > 15, credits$rating + 15, credits$rating)
+credits$rating = ifelse(credits$home == "owner", credits$rating + 15, credits$rating)
+```
+
+Получается ли лучше чем просто правилами?
+```{r}
+approval_condition = credits$rating > 25
+credits$credit_approval_rating = ifelse(approval_condition, "good_approve", "bad_deny")
+
+credits %>% 
+  group_by(status, credit_approval_rating) %>% 
+  summarize(count = n()) %>%
+  group_by(credit_approval_rating) %>%
+  mutate(count_segment = sum(count)) %>%
+  group_by(credit_approval_rating, count_segment) %>% 
+  summarise(gini = 1 - sum((count/count_segment)^2)) %>% 
+  mutate(w_gini = (sum(count_segment)/nrow(credits)) * gini) %>% 
+  ungroup() %>% 
+  summarize(w_gini = sum(w_gini))
+
+table(credits$credit_approval_rating, credits$status)
+```
+
+# мне кажется gini тут не к месту

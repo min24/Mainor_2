@@ -1,0 +1,177 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Загрузка данных
+
+Работаем все так же с сокращенными данными о фильмах
+
+```{r message = FALSE}
+library(tidyverse)
+
+movies <- read_csv("~/shared/minor2_2018/data/movies_cut.csv")
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
+```
+
+### "Полезные" признаки фильмов 
+
+Сформируем набор признаков, характеризующих фильмы, и важных для построения рекомендаций. В проекте этот набор вам нужно определить по результатам разведочного анализа, анализа сетей и текстов, включения дополнительных данных. В рамках лабораторной этот этап сократим и отберем ряд признаков "вручную".
+
+Пусть нам интересны
+* средняя оценка фильма по отзывам
+* популярность
+* жанры
+* продолжительность
+* месяц
+* production_companies
+* актер/актрис (допонительно) (cast)
+
+```{r}
+ratings=ratings %>% group_by(movie_id, movie_year) %>% summarise(rating = mean(rating,na.rm = T))
+movies = left_join(movies, ratings, by = "movie_id")
+```
+
+```{r}
+movies_metadata = read_csv('movies_metadata.csv')
+movies_metadata$movie_year = year(movies_metadata$release_date)
+credits = read_csv('credits.csv')
+movies_metadata = movies_metadata %>% select(id, title, movie_year)
+credits = credits %>% select(id, cast)
+
+cast = dplyr::inner_join(credits, movies_metadata)
+cast$check = paste(cast$title, cast$movie_year)
+cast = cast %>% select(cast, check)
+
+movies$check = paste(movies$title, movies$movie_year)
+movies = movies %>% left_join(cast, by = "check") %>% select(-check)
+write.csv(movies, "movies.csv")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Оставляем только нужные переменные в датасете
+
+
+
+
+```{r}
+library(stringr)
+library(lubridate)
+
+ratings=ratings %>% group_by(movie_id, movie_year) %>% summarise(rating = mean(rating,na.rm = T))
+
+movies2 = movies %>% dplyr::select(title, movie_id, rating, genres, popularity, runtime, movie_year, release_date, production_companies, cast)
+
+movies2$release_date = paste(movies2$release_date, movies2$movie_year, sep = "-")
+movies2$release_date = date(movies2$release_date)
+movies2$month = month(movies2$release_date, label = T)
+
+movies2 = movies2 %>% select(-release_date, -movie_year)
+```
+
+
+
+
+```{r}
+# Hàm lấy diễn viên chính từ site metacritic.
+library(RCurl)
+library(XML)
+library(rjson)
+library(stringr)
+library(tm)
+get_cast = function(title) {
+  title = removePunctuation(title)
+  title = stringr::str_to_lower(title)
+  title = stringr::str_split(title, " ")[[1]]
+  title = stringr::str_c(title, collapse = "-")
+  link = stringr::str_c("https://www.metacritic.com/movie", title, "details", sep = "/")
+  # link = "https://www.metacritic.com/movie/batman-begins/details"
+  webpage <- RCurl::getURL(link)
+  if (webpage == "") { return(NA)}
+  else {
+    webpage <- readLines(tc <- textConnection(webpage)); close(tc)
+    pagetree <- XML::htmlTreeParse(webpage, error=function(...){}, useInternalNodes = TRUE)
+    # parse the tree by tables
+    x <- xpathSApply(pagetree, "//*/table", xmlValue)
+    
+    if (length(x)==0) {return(NA)}
+    else{
+    # do some clean up with regular expressions
+    x <- unlist(strsplit(x, "\n"))
+    x <- gsub("\t","",x)
+    x <- sub("^[[:space:]]*(.*?)[[:space:]]*$", "\\1", x, perl=TRUE)
+    x <- x[!(x %in% c("", "|"))]
+    m = match(c("Principal Cast", "Cast"), x)
+    if (is.na(m[1]) | is.na(m[2])) {return(NA)}
+    else{
+    y = x[(m[1]+2):(m[2]-1)]
+    y = y[seq(1, length(y), by = 2)]
+    z = rjson::toJSON(y)
+    return(z)}
+    }
+    }
+}
+main_cast = Map(get_cast, movies$title)
+get_cast("titanic")
+```
+
+
+
+```{r}
+names(main_cast)
+main_cast[[1]]
+dfa = data.frame(1:511, names(main_cast))
+dfa$cast = main_cast[df$X1.511]
+source("~/shared/minor2_2018/2-tm-net/extract_json.R") 
+
+```
+```{r}
+dfa = dfa %>% select(-X1.511)
+dfa = dfa %>% rename(title = names.main_cast.)
+
+movies2 = movies2 %>% left_join(main_cast, by = "title")
+```
+
+
+
+```{r}
+write.csv(dfa, "main_cast.csv")
+class(dfa)
+```
+

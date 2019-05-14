@@ -1,0 +1,231 @@
+---
+title: 'DS Minor: Lab 01 -- Networks Intro'
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+### "Все связано"
+ - взаимосвязи между людьми (профессиональные, дружеские, семейные,..)
+ - связи между организациями, союзами, странами...
+ - связи между предметами (компьютеры, книги, фильмы...)
+ - связи между понятиями
+ - ...
+ 
+Два основных понятия -- вершины (узлы, vertices, nodes) и связи (дуги, ребра, links, edges). 
+
+* что может являться вершинами и связями в списке выше?
+* приведите свои примеры
+
+Немного примеров
+
+![Recipe](https://pp.vk.me/c636527/v636527093/45690/dKu6GEn4jxU.jpg)
+![Email communication between employees of HP Research Lab.](https://pp.vk.me/c636527/v636527093/45698/pLr04qRfbJE.jpg)
+
+
+![US election news coverage](https://upload.wikimedia.org/wikipedia/commons/4/43/Tripletsnew2012.png)
+
+![The Political Blogosphere and the 2004 U.S. Election: Divided They Blog](https://ai2-s2-public.s3.amazonaws.com/figures/2017-08-08/11971e428132ade5439f77eea258140302865ad7/2-Figure1-1.png)
+
+### Формализация сетей -- графы
+
+#### Термины и понятия
+
+* граф (graph)
+* вершина, узел (node)
+* ребро, связь (edge)
+* ориентированные (направленные) / неориентированные графы (directed / undirected graph)
+* список ребер (edgelist)
+* матрица смежности (adjacency matrix)
+
+#### Инструмент
+
+Мы будем работать с пакетом `igraph` для создания и работы с направленными и ненаправленными графами (<http://igraph.org/r/>)
+
+```{r message=FALSE, warning=FALSE}
+library(igraph)
+```
+
+#### Небольшие примеры для обсуждения понятий
+**Граф** -- способ формально описать взаимосвязи между набором элементов (**вершин, nodes**). 
+**Ребро (edge)** -- связь между элементами, представляется как пара вершин (начало-конец)
+
+**Ориентированный граф** -- несимметричная связь, направление важно. **Неориентированный граф** -- симметричная связь (*A* и *B* связаны).
+
+* какие графы являются ориентированными? Неориентированными?
+* сколько вершин в графах? Ребер?
+
+```{r echo = FALSE, fig.height=7}
+# we will discuss the creation of graphs later. At that time just look at the pictures
+par(mar=c(5.1,1,1,1), mfrow = c(2,2))
+plot(make_graph("Bull"), 
+     vertex.color = "lightblue", 
+     vertex.size = 40, 
+     vertex.label.cex = 1.5,
+     xlab = "(A)")
+plot(make_graph("Diamond"), 
+     vertex.color = "lightblue", 
+     vertex.size = 40, 
+     vertex.label.cex = 1.5,
+     xlab = "(B)")
+plot(make_graph(c(1, 2, 2, 3, 3, 4, 5, 6), directed = TRUE), 
+     vertex.color = "lightblue", 
+     vertex.size = 40, 
+     vertex.label.cex = 1.5,
+     edge.arrow.size = 0.2,
+     edge.arrow.width = 1.5,
+     xlab = "(C)")
+plot(make_graph(c("A","C", "A","D", "B","D", "E","A", "B","F", "F","A"), directed = TRUE), 
+     vertex.color = "lightblue", 
+     vertex.size = 40, 
+     vertex.label.cex = 1.5,
+     edge.arrow.size = 0.2,
+     edge.arrow.width = 1.5,
+     xlab = "(D)")
+```
+
+### Создание графа
+Граф состоит из набора вершин и набора ребер. Один из способов его задания -- определить список ребер **edgelist**, т.е. список пар связанных вершин.
+
+Создадим направленный граф с 5 вершинами и 6 ребрами:
+```{r}
+exampleGr <- make_graph(c("Mary","Fred", 
+                          "Mary","Lee", 
+                          "Fred","Lee", 
+                          "Elisa","Mary", 
+                          "Fred","Sam", 
+                          "Sam","Mary"), directed = F)
+
+
+```
+
+Результат вызова функции `print()` -- описание созданного объекта
+
+```{r}
+
+print(exampleGr)
+```
+
+Нарисовать граф можно с помощью функции `plot()`:
+
+```{r}
+dev.off()
+
+plot(exampleGr)
+```
+
+#### Загрузка графа
+
+Мы рассмотрели пример создания графа вручную, но в большинстве случаев мы будем загружать их из файлов некоторого формата. `igraph` позволяет использовать многие форматы файлов. 
+
+##### Список ребер
+
+`graph_from_data_frame` создает граф igraph из таблицы данных (data frame), первые два столбца которого рассматриваются как список ребер (начало - конец), остальные -- как дополнительные свойства ребер.
+
+Рассмотрим искусственную социальную сеть *Krackhardt’s kite*.
+
+```{r}
+library(readr)
+edgelist <- read_csv("~/shared/minor2_2018/2-tm-net/lab01-netIntro/kite.csv")
+head(edgelist)
+
+kite <- graph_from_data_frame(edgelist, directed = FALSE) #обязательно загляните в справку и посмотрите как достать из igraph объекта data frame
+
+plot(kite)
+```
+
+
+##### Матрица смежности (Adjacency matrix)
+
+Еще одно представление графа -- **матрица смежности** (adjacency matrix), т.е. матрица |V|x|V|, где |V| -- число вершин, а элемент в i-ой строке и j-ом столбце равен 1, если есть связь между вершиной i и вершиной j, и 0 в противном случае.
+
+Рассмотрим отношения между семьями Флоренции (Renaissance Florentine families collected by John Padgett from historical documents). Связь -- брачные договоры.
+
+```{r}
+adjFlorence <- read_csv("~/shared/minor2_2018/2-tm-net/lab01-netIntro/florentineFamily.csv")
+adjFlorence
+rownames(adjFlorence) <- names(adjFlorence)
+
+adjFlorence <- as.matrix.data.frame(adjFlorence)
+```
+
+Матрица смежности
+
+```{r results='asis'}
+# View(adjFlorence)
+pander::pandoc.table(adjFlorence, split.tables = Inf)
+```
+
+Создание графа по матрице (`graph_from_adjacency_matrix`)
+
+```{r}
+florentine <- graph_from_adjacency_matrix(adjmatrix = adjFlorence, mode = "undirected")
+```
+
+Функции `V()` и `E()` выдают список вершин и ребер соответственно.
+
+```{r}
+V(florentine)
+E(florentine)
+```
+
+Для получения числа вершин и ребер в графе можно использовать функции `vcount()` и `ecount()`
+
+```{r}
+vcount(florentine)
+ecount(florentine)
+```
+
+```{r}
+plot(florentine)
+```
+
+#### Другие форматы файлов
+
+`igraph` позволяет читать и файлы других форматов, например, файл *Pajek*. Подробности и другие форматы в `?read.graph()`
+
+
+### Рисование графа
+
+В пакете `igraph` много параметров для визуализации графов. Более подробно можно посмотреть в `?igraph.plotting`.
+
+Подробнее мы будем говорить о визуализации следующий раз, но можно менять цвета, размеры, подписи, фон и т.д., чтобы получить именно тот вид графа, что нужен. Существует два способа определения этих параметров. 
+
+Первый -- указать их в функции `plot`:
+```{r}
+plot(florentine,
+     vertex.color = "lightgreen",
+     vertex.size = 40,
+     vertex.shape = "rectangle",
+     edge.width = 1.5)
+
+
+```
+
+Второй способ -- задать нужные значения как свойства вершин или ребер.
+
+```{r}
+#проверим до
+V(florentine)$color
+
+V(florentine)$color = "lightblue"
+
+#проверим после
+V(florentine)$color
+
+V(florentine)$size = 7
+V(florentine)$label.dist = 0.5 # labels outside the circles
+E(florentine)$width = 2
+plot(florentine)
+```
+
+Еще один параметр визуализации -- укладка (layout)
+
+```{r}
+plot(florentine, layout = layout.circle)
+plot(florentine, layout = layout.fruchterman.reingold)
+plot(florentine, layout = layout.kamada.kawai, 
+     vertex.color = "orange",           
+     vertex.label.color = "black")
+
+```

@@ -1,0 +1,142 @@
+#1. Creating the ROC curve (1)
+In this exercise you will work with a medium sized dataset about the income of people given a set of features like education, race, sex, and so on. Each observation is labeled with 1 or 0: 1 means the observation has annual income equal or above $50,000, 0 means the observation has an annual income lower than $50,000 (Source: UCIMLR). This label information is stored in the income variable.
+
+A tree model, tree, is learned for you on a training set and tries to predict income based on all other variables in the dataset.
+
+In previous exercises, you used this tree to make class predictions, by setting the type argument in predict() to "class".
+
+To build an ROC curve, however, you need the probabilities that the observations are positive. In this case, you'll want to to predict the probability of each observation in the test set (already available) having an annual income equal to or above $50,000. Now, you'll have to set the type argument of predict() to "prob".
+
+Predict the probabilities of the test set observations using predict(). It takes three arguments:
+
+The first argument should be the tree model that is built, tree
+The second argument should be the test set, on which you want to predict
+Finally, don't forget to set type to "prob".
+Assign the result to all_probs.
+
+Print out all_probs. Ask yourself the question; what kind of data structure is it?
+
+Select the second column of all_probs, corresponding to the probabilities of the observations belonging to class 1. Assign to probs.
+
+```{r}
+# train and test are pre-loaded
+train = read_csv("./dataset/adult.data.csv")
+test = read_csv("./dataset/adult.test.csv")
+# Set random seed. Don't remove this line
+set.seed(1)
+
+# Build a tree on the training set: tree
+tree <- rpart(income ~ ., train, method = "class")
+
+# Predict probability values using the model: all_probs
+all_probs = predict(tree, test, type="prob")
+
+# Print out all_probs
+all_probs
+
+# Select second column of all_probs: probs
+probs = all_probs[,2]
+
+```
+
+#2. Creating the ROC curve (2)
+Now that you have the probabilities of every observation in the test set belonging to the positive class (annual income equal or above $50,000), you can build the ROC curve.
+
+You'll use the ROCR package for this. First, you have to build a prediction object with prediction(). Next, you can use performance() with the appropriate arguments to build the actual ROC data and plot it.
+
+probs, which you had to calculate in the previous exercise, is already coded for you.
+
+Load the ROCR package.
+Use prediction() with probs and the true labels of the test set (in the income column of test) to get a prediction object. Assign the result to pred.
+Use performance() on pred to get the ROC curve. The second and third argument of this function should be "tpr" and "fpr". These stand for true positive rate and false positive rate, respectively. Assign to result to perf.
+Plot perf with plot().
+
+```{r}
+# train and test are pre-loaded
+train = read_csv("./dataset/adult.data.csv")
+test = read_csv("./dataset/adult.test.csv")
+
+# Code of previous exercise
+set.seed(1)
+tree <- rpart(income ~ ., train, method = "class")
+probs <- predict(tree, test, type = "prob")[,2]
+
+# Load the ROCR library
+library(ROCR)
+
+# Make a prediction object: pred
+pred = prediction(probs, test$income)
+?performance
+# Make a performance object: perf
+perf = performance(pred, "tpr", "fpr" )
+
+# Plot this curve
+plot(perf)
+```
+
+#3. The area under the curve
+The same package you used for constructing the ROC curve can be used to quantify the area under the curve, or AUC. The same tree model is loaded into your workspace, and the test set's probabilities have again been calculated for you.
+
+Again using the ROCR package, you can calculate the AUC. The use of prediction() is identical to before. However, the performance() function needs some tweaking.
+
+Load the ROCR package once more, just for kicks!
+Use prediction() with the probabilities and true labels of the test set to get a prediction object. Assign to pred.
+Use performance() with this prediction object to get the ROC curve. The second argument of this function should be "auc". This stands for area under curve. Assign to perf.
+Print out the AUC. This value can be found in perf@y.values[[1]]
+
+```{r}
+# test and train are loaded into your workspace
+
+# Build tree and predict probability values for the test set
+set.seed(1)
+tree <- rpart(income ~ ., train, method = "class")
+probs <- predict(tree, test, type = "prob")[,2]
+
+# Load the ROCR library
+library(ROCR)
+
+# Make a prediction object: pred
+pred = prediction(probs, test$income)
+
+# Make a performance object: perf
+perf = performance(pred, "auc")
+
+# Print out the AUC
+perf@y.values[[1]]
+```
+
+
+#4. Comparing the methods
+In this exercise you're going to assess two models: a decision tree model and a k-Nearest Neighbor model. You will compare the ROC curves of these models to draw your conclusions.
+
+You finished the previous chapter by building a spam filter. This time, we have some predictions from two spam filters! These spam filters calculated the probabilities of unseen observations in the test set being spam. The real spam labels of the test set can be found in test$spam.
+
+It is your job to use your knowledge about the ROCR package to plot two ROC curves, one for each classifier. The assigned probabilities for the observations in the test set are loaded into your workspace: probs_t for the decision tree model, probs_k for k-Nearest Neighbors.
+
+The test set is loaded into your workspace as test. It's a subset of the emails dataset.
+
+
+Load the ROCR package.
+probs_t and probs_k are the probabilities of being spam, predicted by the two classifiers. Use prediction() to create prediction objects for probs_t and probs_k. Call them pred_t and pred_k.
+Use these prediction objects, pred_t and pred_k, to create performance objects. You can use the performance() function for this. The second and third arguments should be "tpr" and "fpr" for both calls. Call them perf_t and perf_k.
+A predefined functions has been defined for you: draw_roc_lines(). It takes two arguments: the first is the performance object of the tree model, perf_t, and the second is the performance object of the k-Nearest Neighbor model, perf_k.
+
+```{r}
+# Load the ROCR library
+
+library(ROCR)
+
+# Make the prediction objects for both models: pred_t, pred_k
+pred_t = prediction(probs_t, test$spam)
+pred_k = prediction(probs_k, test$spam)
+
+
+# Make the performance objects for both models: perf_t, perf_k
+perf_t = performance(pred_t, "tpr", "fpr")
+perf_k = performance(pred_k, "tpr", "fpr")
+
+
+# Draw the ROC lines using draw_roc_lines()
+draw_roc_lines(perf_t, perf_k)
+```
+

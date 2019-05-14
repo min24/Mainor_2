@@ -1,0 +1,26 @@
+## Отбор наблюдений/строк 
+
+Допустим, нас интересуют только полеты в летние месяцы
+
+```{r}
+#?filter
+class(flData$month) 
+flData = filter(flData, month == 6 | month == 7 | month == 8)
+```
+```{r ex7}
+dim(flData)
+head(flData, 3)
+```
+
+Посмотрим из какого аэропорта самолеты вылетают на более дальние дистанции в летний период:
+```{r ex8}
+ggplot(data = flData) + geom_boxplot(aes(x = origin, y = distance)) 
+```
+
+Теперь отберем только те рейсы, в которых пункт назначения Майами (MIA - Miami International Airport)
+
+```{r exe9}
+flData = filter(flData, dest == "MIA")
+ggplot(data = flData) + geom_bar(aes(x = month, fill = origin), position = "dodge")
+```
+

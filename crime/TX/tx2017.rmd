@@ -1,0 +1,100 @@
+
+
+
+```{r}
+library(readr)
+library(dplyr)
+offender = read_csv("NIBRS_OFFENDER.csv")
+victim = read_csv("NIBRS_VICTIM.csv")
+victim_offense = read_csv("NIBRS_VICTIM_OFFENSE.csv")
+incident = read_csv("NIBRS_incident.csv")
+arrestee = read_csv("NIBRS_ARRESTEE.csv")
+```
+
+```{r}
+names(offender)
+```
+
+```{r}
+library(lubridate)
+
+
+```
+
+```{r}
+data = inner_join(victim, offender, by = "INCIDENT_ID") %>% na.omit()
+
+```
+
+```{r}
+library(ggplot2)
+
+
+table(data$AGE_NUM.x, data$AGE_NUM.y)
+
+```
+```{r}
+# correlation = 0.3
+cor(data$AGE_NUM.x, data$AGE_NUM.y)
+t.test(data$AGE_NUM.x, data$AGE_NUM.y)
+
+```
+```{r}
+
+```
+
+
+```{r}
+offender %>% group_by(RACE_ID) %>% summarise(count = n(), mean = mean(AGE_NUM, na.rm = T), median = median(AGE_NUM, na.rm = T))
+```
+
+```{r}
+offender %>% filter(RACE_ID == 2) %>% group_by(AGE_NUM) %>% summarise(count = n()) %>% ggplot()+
+  geom_bar(aes(x = AGE_NUM, y = count), stat = "identity")
+```
+
+```{r}
+offender %>% filter(RACE_ID == 1) %>% group_by(AGE_NUM) %>% summarise(count = n()) %>% ggplot()+
+  geom_bar(aes(x = AGE_NUM, y = count), stat = "identity")
+```
+```{r}
+offender %>% filter(RACE_ID == 3) %>% group_by(AGE_NUM) %>% summarise(count = n()) %>% ggplot()+
+  geom_bar(aes(x = AGE_NUM, y = count), stat = "identity")
+```
+
+```{r}
+offender %>% filter(RACE_ID == 4) %>% group_by(AGE_NUM) %>% summarise(count = n()) %>% ggplot()+
+  geom_bar(aes(x = AGE_NUM, y = count), stat = "identity")
+```
+
+```{r}
+offender %>% filter(RACE_ID == 8) %>% group_by(AGE_NUM) %>% summarise(count = n()) %>% ggplot()+
+  geom_bar(aes(x = AGE_NUM, y = count), stat = "identity")+
+  scale_fill_brewer()
+```
+
+```{r}
+data_age = data %>% select(AGE_NUM.x, AGE_NUM.y)
+
+```
+
+
+```{r}
+data_age$tf = abs(data_age$AGE_NUM.x - data_age$AGE_NUM.y) < 5
+data_age %>% ggplot()+
+  geom_bar(aes(tf))
+```
+```{r}
+write.csv(data, "data.csv", row.names = FALSE)
+```
+
+```{r}
+
+```
+
+
+
+
+
+
+

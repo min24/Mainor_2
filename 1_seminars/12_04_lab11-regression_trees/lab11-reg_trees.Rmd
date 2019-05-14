@@ -1,0 +1,443 @@
+
+# Диктант 
+https://docs.google.com/document/d/1csedwT8tTWpUrkrkCrWNSSW6lb1N9q8J3XMcoX2oQPY/edit?usp=sharing
+- ничем пользоваться нельзя (сервак, вк и прочее - карается)!!!
+- пишем 10 минут
+
+
+
+
+# Регрессионные деревья
+
+Перед нами часто стоит задача алгоритмического поиска правил, которые позволили бы разделить данные на группы в соответствии с каким-то интересующим нас показателем.
+
+Подобные задачи делятся на две групы: задачи регрессии и задачи классификации. 
+
+Задача классификации возникает  в том случае, если интересующим нас показателем является принадлежность в некоторому классу (болен/не болен, спам/не спам, ушел/остался, высокий/средний/низкий...) -- т.е. категориальная переменная. 
+
+Про задачу регрессии мы говорим тогда, когда мы хотим предсказать некий количественный, числовой показатель (уровень продаж, рейтинг, риск заразиться...).
+
+![](http://res.cloudinary.com/dyd911kmh/image/upload/f_auto,q_auto:best/v1528907338/regression-tree_g8zxq5.png)
+
+```{r}
+library(dplyr)
+library(readr)
+library(ggplot2)
+
+library(rpart)
+library(rpart.plot)
+```
+
+## Построение регрессионных деревьев
+
+Загрузим данные.
+
+```{r fig.width=20}
+survey = read_csv(
+  file = "~/shared/minor2_2018/1-intro/lab11-regression_trees/Income_Data.txt", 
+  col_names = c("income", "sex", "martial_status", "age", "edu", "ocupation", "living_time", "dual_incomes", "pers_in_house", "pers_in_house_under18", "householder_status", "type_of_home", "ethnic_cl", "lang"), 
+  col_types = "nccnccccnncccc")
+```
+
+О чем эти данные? Посмотрите в Income_Info.txt!
+
+Наша задача - предсказать дохода домохозяйств - income.
+
+Разделим выборку на две части.
+
+![](https://cdn-images-1.medium.com/max/1600/1*-8_kogvwmL1H6ooN1A1tsQ.png)
+
+```{r}
+survey$id = 1:nrow(survey)
+
+set.seed(2)
+survey.train = survey %>% 
+  sample_frac(0.8)
+
+survey.test = survey %>% 
+  filter(!(id %in% survey.train$id))
+
+survey.test$id %>% head()
+survey.train = survey %>% anti_join(survey.train)
+survey.test$id %>% head()
+
+```
+
+Тренируем модель. 
+В случае с классификацией мы использовали коэффициент "чистоты" Джини, пытаясь разделить на два наиболее "чистых" класса. Будет ли это рабоать для регрессионных деревьев?
+
+Для них, при разделении на сегменты мы пытаемся минимизировать сумму квадратов отклонений (residual sum of squared error (RSS)) для каждого получившегося сегмента на обучающей выборке.
+
+RSS -- это сумма квадратов разницы между наблюдаемым значением (observed) и предсказываемым (predicted) 
+`RSS = sum((Observeds - Predicteds)^2)`
+
+Перед самым первым разделением, когда у нас еще нет никаких сегментов -- мы сравниваем наблюдаемые значения со средним по всей выборке. Назовем это RSS_root.
+
+После разбиения на две группы, мы стремимся максимизировать формулу:
+RSS_root − (RSS(L) + RSS(R))
+
+В лучшем случае у нас произошло разбиение на две группы, в которых мы идеально предсказываем значение Y, тогда RSS_root - (0 + 0) = RSS_root
+
+В плохом случае, у нас прогноз в одном из дочерних узлов не улучшился, а другая, например, оказалось "пустой", в таком случае RSS - (0 + RSS(R)) = 0
+
+Строим модель!
+
+```{r}
+tree.regr = rpart(income ~ ., data = survey.train)
+```
+
+Рисуем дерево
+
+```{r}
+tree.regr
+prp(tree.regr)
+
+survey.train %>% filter(householder_status == 1) %>% 
+  filter(ocupation == 1) %>% 
+  nrow()
+
+prp(tree.regr, extra = 1)
+
+```
+
+- У людей с какими характеристиками самый высокий предсказанный доход домохозяйства?
+- Какой минимальный предсказанный доход у домохозяйств 2 и 3 типов?
+- Найдите терминальный узел с самым высоким предсказанным доходом домохозяйств. Сколько в него попало наблюдений? 
+
+А теперь мы хотим оценить точность модели. Как вы думаете, что будет, если мы попробуем построить матрицу неcоответствий (confusion matrix)? 
+
+```{r}
+tree.pred = predict(tree.regr, survey.test)
+tree.pred
+
+tree.pred.df = data.frame(
+  pred = tree.pred,
+  income = survey.test$income
+)
+
+ggplot() +
+  geom_point(data = tree.pred.df, aes(x = income, y = pred))
+
+
+```
+`
+
+
+Переделаем в боксплоты.
+
+```{r}
+ggplot() +
+  geom_boxplot(data = tree.pred.df, aes(x = as.factor(income), y = pred))
+```
+
+Посчитаем, насколько наше предсказание отличается от реального значения
+
+![](https://www.machinelearningplus.com/wp-content/uploads/2017/03/R_Squared_Computation.png)
+
+```{r}
+# RSS - Residual Sum of Squares
+rss = sum((tree.pred - survey.test$income)^2)
+# TSS - Total Sum of Squares
+tss = sum((mean(survey.test$income) - survey.test$income)^2) 
+# R^2 - Доля объясненной дисперсии
+1 - (rss / tss)
+```
+
+Можем ли мы еще вырастить дерево (сделать его более точным и сложным)? Или дерево оказалось переобученным?
+
+```{r}
+plotcp(tree.regr)
+printcp(tree.regr)
+```
+
+Если по получившейся таблице (колонка xerror) или графику (Ось У) ошибка продолжает падать, тогда модель можно усложнить.
+
+Если по таблице (колонка xerror) или графику (ось У) ошибка начинает расти, тогда ищем значение *cp*, при котором значение ошибки минимально и обрезаем дерево.
+
+"Вырастим" большое дерево! Уменьшаем параметр *cp*. Он по-умолчанию равен 0.01.
+
+```{r}
+tree.regr2 = rpart(income ~ ., data = survey.train, control = rpart.control(cp = 10^-4))
+
+# Смотрим на ошибку 
+# prp(tree.regr2)
+plotcp(tree.regr2)
+
+# делаем предсказание
+tree.pred2 = predict(tree.regr2, survey.test)
+
+# считаем R^2
+rss = sum((tree.pred2 - survey.test$income)^2)
+tss = sum((mean(survey.test$income) - survey.test$income)^2)
+1 - (rss / tss)
+```
+
+А теперь найдем место, в котором необходимо обрезать это дерево. И посмотрим будет ли оно предсказывать лучше.
+
+Сохраняем таблицу с ошибками в переменную, затем ищем строчку с минимальным значением xerror.
+
+```{r}
+cp_tbl = printcp(tree.regr2)
+
+cp_tbl %>%
+  as.data.frame() %>% 
+  arrange(xerror) %>% 
+  head(n = 1)
+```
+
+Обрезаем дерево через prune()
+
+```{r}
+#printcp(tree.regr2)
+tree.regr3 = prune(tree.regr2, cp = 0.001473409)
+```
+
+Рисуем дерево и считаем его долю объясненной дисперсии (R^2).
+
+```{r}
+prp(tree.regr3)
+
+plotcp(tree.regr3)
+
+tree.pred3 = predict(tree.regr3, survey.test)
+
+# считаем R^2
+rss = sum((tree.pred3 - survey.test$income)^2)
+tss = sum((mean(survey.test$income) - survey.test$income)^2)
+1 - (rss / tss)
+```
+
+## Пример с предсказанием цен на недвижимость
+
+Задача -- предсказать цену на жилья. Сначала загрузим данные [House Pricing](https://www.kaggle.com/c/house-prices-advanced-regression-techniques/data)
+
+```{r}
+housing = read.csv("~/shared/minor2_2018/1-intro/lab11-regression_trees/housing.csv")
+```
+
+Работать будем только с частью переменных
+
+```{r}
+housing = housing %>% 
+  dplyr::select(Id, SalePrice, LotArea, LotShape, Utilities, OverallQual,
+                OverallCond, YearBuilt, RoofStyle, ExterCond, Heating, BedroomAbvGr,
+                KitchenQual, GarageType, PoolArea)
+```
+
+Для более удобной работы выразим цену жилья в тысячах
+
+```{r}
+housing$SalePrice = housing$SalePrice/1000
+```
+
+Задания:
+
+1. Разделите данные на обучающую (80% наблюдений) и тестовую выборки
+
+```{r}
+set.seed(1)
+housing.train = housing %>% sample_frac(.8)
+housing.test = housing %>% filter(!(Id %in% housing.train$Id))
+
+```
+
+2. Постройте регрессионное дерево предсказывающее цену жилья - переменная SalePrice. Нарисуйте его.
+
+
+
+```{r}
+library(dplyr)
+library(readr)
+library(ggplot2)
+
+library(rpart)
+library(rpart.plot)
+```
+
+```{r}
+tree.regr = rpart(SalePrice ~ ., data = housing.train)
+tree.regr
+prp(tree.regr)
+prp(tree.regr, extra = 1)
+
+```
+
+3. Посчитайте какое предсказание дает ваша модель для наблюдений в тестовой выборке и затем долю объясненной дисперсии (R^2).
+
+```{r}
+
+tree.pred = predict(tree.regr, housing.test)
+tree.pred
+
+rss = sum((tree.pred - housing.test$SalePrice)^2)
+tss = sum((mean(housing.test$SalePrice) - housing.test$SalePrice)^2)
+rr1 = 1 - rss/tss
+rr1
+```
+
+4. Используйте printcp() и plotcp(), чтобы выяснить, можно ли "нарастить" дерево, т.е. добавить новые разбиения. Сделайте это и затем обрежте дерево через prune(), чтобы избежать переобучения. Сравните R^2 для всех вариантов модели.
+
+```{r}
+
+plotcp(tree.regr)
+printcp(tree.regr)
+
+```
+```{r}
+tree.regr2 = rpart(SalePrice ~ ., data = housing.train, control = rpart.control(cp = 10^-4))
+plotcp(tree.regr2)
+
+
+tree.pred2 = predict(tree.regr2, housing.test)
+rss2 = sum((tree.pred2 - housing.test$SalePrice)^2)
+tss = sum((mean(housing.test$SalePrice) - housing.test$SalePrice)^2)
+rr2 = 1 - rss2/tss
+rr2
+```
+
+
+
+```{r}
+tree.regr3 = prune(tree.regr2, cp = 0.001473409)
+tree.pred3 = predict(tree.regr3, housing.test)
+
+
+rss3 = sum((tree.pred3 - housing.test$SalePrice)^2)
+tss = sum((mean(housing.test$SalePrice) - housing.test$SalePrice)^2)
+rr3 = 1 - rss3/tss
+rr3
+```
+
+```{r}
+#=======================================================================================================================
+```
+
+
+
+
+- Сколько наблюдений попало в каждый терминальный узел с предсказанием?
+```{r}
+prp(tree.regr3, extra = 1)
+
+```
+- Перечислите правила, при выполнении которых мы предсказываем, что цена дома будет больше 300 тысяч?
+```{r}
+price300_pred = ifelse(housing$OverallQual >= 8.5, TRUE, FALSE)
+price300_real = housing$SalePrice >= 300
+conf = table(price300_real, price300_pred)
+acc = sum(diag(conf))/sum(conf)
+acc
+```
+
+- У домов с какими характеристиками согласно нашему дереву самая низкая цена? 
+lower_price_condition = (housing$OverallQual &
+```{r}
+lower_price_condition = (housing$OverallQual < 4.5 & housing$YearBuilt < 1954)
+
+```
+
+
+
+## Возвращаемся к задаче классификации - повторение
+
+![](https://www.safaribooksonline.com/library/view/data-science-for/9781449374273/images/dsfb_0315a.png)
+![](https://www.safaribooksonline.com/library/view/data-science-for/9781449374273/images/dsfb_0315b.png)
+
+А теперь мы работаем с набором данных о пасажирах Титаника, затонувшего в 1912 году. Наша задача предсказать - выживет ли конкретный пассажир или нет (Survived). Описание переменных можно посмотреть [здесь](https://www.kaggle.com/jamesleslie/titanic-cleaned-data).
+
+```{r}
+tit = read_csv("~/shared/minor2_2018/1-intro/lab11-regression_trees/titanic.csv")
+tit$Survived = ifelse(tit$Survived == 1, "Survived", "Dead")
+```
+
+Задания:
+
+1. Какие из переменных не подходят для создания модели (генерализуемой)? Удалите их.
+
+```{r}
+tit = read_csv("~/shared/minor2_2018/1-intro/lab11-regression_trees/titanic.csv")
+tit$Survived = ifelse(tit$Survived == 1, "Survived", "Dead")
+tit = tit %>% select(PassengerId, Age, Fare,Pclass, Sex, Survived)
+
+```
+
+2. Разделите данные на обучающую (80% наблюдений) и тестовую выборки.
+
+```{r}
+set.seed(1)
+tit.train = tit %>% sample_frac(.8)
+tit.test = tit %>% filter(!(tit$PassengerId %in% tit.train$PassengerId))
+
+```
+
+2. Постройте классификационное дерево и нарисуйте его.
+
+```{r}
+set.seed(1)
+tree.class = rpart(Survived ~ ., data = tit.train, method = "class")
+prp(tree.class, extra = 1)
+
+```
+
+3. Посчитайте предсказение вашей модели на тестовом наборе данных. Постройте матрицу несоответствий (confusion matrix). Какова точность (accuracy) вышей модели?
+
+```{r}
+pred  = predict(tree.class, tit.test, type = "class")
+
+nrow(tit.test)
+conf = table(tit.test$Survived, pred)
+acc = sum(diag(conf))/sum(conf)
+
+conf
+acc
+```
+
+4. Используйте printcp() и plotcp(), чтобы выяснить, можно ли "нарастить" дерево, т.е. добавить новые разбиения. Сделайте это и затем обрежте дерево через prune(), чтобы избежать переобучения. Сравните точность для всех вариантов модели.
+
+```{r}
+printcp(tree.class)
+plotcp(tree.class)
+```
+```{r}
+tree.class2 = rpart(Survived ~ ., data = tit.train, control = rpart.control(cp = 10^-4))
+printcp(tree.class2)
+plotcp(tree.class2)
+
+pred2  = predict(tree.class2, tit.test, type = "class")
+conf2 = table(tit.test$Survived, pred2)
+acc2 = sum(diag(conf))/sum(conf)
+
+conf2
+acc2 
+acc
+
+# acc = acc2
+```
+
+
+
+- Какими характеристиками должен обладать пассажир мужского пола, чтобы модель предсказала, что он выживет?
+- Для каких пассажиров класс каюты оказывается важным предиктором выживания?
+- Для какого количества мужчин мы предсказываем, что они выживут? Сколько раз мы ошибаемся в этом предсказании?
+
+
+```{r}
+library(MASS)
+data(Boston)
+
+Boston$Id = 1:nrow(Boston)
+set.seed(888)
+Boston.train = Boston %>% sample_frac(.8)
+Boston.test = Boston %>% filter(!(Id %in% Boston.train$Id))
+tree.regr = rpart(crim ~ ., Boston.train)
+tree.pred = predict(tree.regr, Boston.test, method="class", control=rpart.control(cp=0.0001))
+
+rss = (sum((tree.pred - Boston.test$crim)^2))
+tss = (sum((mean(Boston.test$crim) - Boston.test$crim)^2))
+r = (rss/tss)
+r
+# = 0.71
+rpart.plot(tree.regr)
+```
+
+

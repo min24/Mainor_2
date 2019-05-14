@@ -1,0 +1,73 @@
+---
+title: "solutions"
+output: html_document
+---
+
+# 1 задание
+
+```{r}
+neutral = reviews.sent %>% filter(id %in% reviews$id[reviews$rating %in% c(3,4)])
+reviews.pmi_neu = neutral %>% dplyr::select(-value, -id)
+reviews_add = dplyr::select(reviews.pmi, words:g2)
+reviews.pmi_neu = inner_join(reviews.pmi_neu, reviews_add, by = "words")
+
+
+reviews.pmi_neu %>% 
+  ggplot(aes(x=positive+negative, y=g2, color=5*PMI_p-PMI_n, label=words)) +
+  scale_color_gradient2(low="red", high="blue") +
+  geom_text(check_overlap = TRUE)
+```
+
+# 2 задание
+
+```{r}
+positive = reviews.tidy %>% filter(id %in% reviews$id[reviews$rating==5]) %>% mutate(sent = "positive")
+negative = reviews.tidy %>% filter(id %in% reviews$id[reviews$rating<3]) %>% mutate(sent = "negative")
+
+reviews.pmi = rbind(positive, negative) %>% dplyr::select(-id)
+reviews.pmi = reviews.pmi %>% dplyr::count(words, sent) %>% spread(sent, n, fill = 0)
+
+freq_p = reviews.pmi$positive
+freq_n = reviews.pmi$negative
+sum_p = sum(reviews.pmi$positive) 
+sum_n = sum(reviews.pmi$negative) 
+
+pmi_p = log((freq_p/sum_p)/((freq_p+freq_n)/(sum_p+sum_n)*sum_p/(sum_p+sum_n))+1, base=2)
+reviews.pmi$PMI_p = pmi_p
+
+pmi_n = log((freq_n/sum_n)/((freq_p+freq_n)/(sum_p+sum_n)*sum_n/(sum_p+sum_n))+1, base=2)
+reviews.pmi$PMI_n = pmi_n
+
+reviews.pmi %>% 
+  ggplot(aes(x=positive+negative, y=PMI_p-PMI_n, color=5*PMI_p-PMI_n, label=words)) +
+  scale_color_gradient2(low="red", high="blue") +
+  geom_point()
+
+reviews.pmi %>% 
+  ggplot(aes(x=positive+negative, y=PMI_p-PMI_n, color=5*PMI_p-PMI_n, label=words)) +
+  scale_color_gradient2(low="red", high="blue") +
+  geom_text(check_overlap = TRUE)
+
+reviews.pmi %>% filter(PMI_p > PMI_n) %>%
+  with(wordcloud(words, PMI_p/100, c(2,2), max.words = 25, colors = brewer.pal(7,"Accent")))
+
+reviews.pmi %>% filter(PMI_n > PMI_p) %>%
+  with(wordcloud(words, PMI_n/100, c(2,2), max.words = 25, colors = brewer.pal(7,"Accent")))
+
+g2 = function(a, b) {
+  c = sum(a)
+  d = sum(b)
+  E1 = c * ((a + b) / (c + d))
+  E2 = d * ((a + b) / (c + d))
+  return(2*((a*log(a/E1+1e-7)) + (b*log(b/E2+1e-7))))
+}
+
+reviews.pmi <- reviews.pmi %>% 
+  mutate(g2=g2(positive, negative))
+
+reviews.pmi %>% filter(PMI_p > PMI_n) %>%
+  with(wordcloud(words, g2, c(2,2), max.words = 25, colors = brewer.pal(7,"Accent")))
+
+reviews.pmi %>% filter(PMI_n > PMI_p) %>%
+  with(wordcloud(words, g2, c(2,2), max.words = 25, colors = brewer.pal(7,"Greens")))
+```

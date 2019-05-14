@@ -1,0 +1,71 @@
+#1. Today, Now
+
+```{r}
+today = Sys.Date()
+today()
+class(today)
+```
+```{r}
+now = Sys.time()
+now
+class(now)
+```
+
+#2. Create Date objects
+```{r}
+my_date = as.Date("1997-04-02")
+my_date
+```
+Default format:
+%Y-%m-%d
+%Y = 4 digits years
+%m = 2 digits months
+%d = 2 digits days
+
+```{r}
+as.Date("1997-15-02", format = "%Y-%d-%m")
+```
+
+#3. Create POSIXct objects:
+```{r}
+my_time = as.POSIXct("1997-04-15 12:55:10")
+my_time
+```
+
+#4. Data arithmetic:
+
+```{r}
+my_date = as.Date("1997-05-15")
+my_date + 1
+#Day incremented by 1
+my_date2 = Sys.Date()
+my_date2 - my_date
+# The difference between today and birthday
+```
+
+
+
+#5. POSIXct arithmetic:
+```{r}
+my_time
+my_time + 1
+# The second incremented by 1
+my_time2 = Sys.time()
+my_time2 - my_time
+```
+
+#6. Under the hood:
+```{r}
+my_date
+unclass(my_date)
+# 9996 days from 1970-01-01
+
+my_time
+unclass(my_time)
+# 861094510 seconds from 1970-01-01 00:00:00
+```
+
+#7. Delicated R packages:
+lubridate
+zoo
+xts

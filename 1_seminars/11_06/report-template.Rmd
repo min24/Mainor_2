@@ -1,0 +1,173 @@
+---
+title: "Шаблон отчета"
+author: "lnguen_1"
+output: html_document
+---
+
+### Отчет. Часть 1 -- клиентская база
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = F, eval = T, message = F, warning = F)
+
+```
+
+```{r, echo = F}
+library(dplyr) 
+library(readr)
+library(ggplot2)
+library(magrittr)
+```
+
+```{r}
+ theme_set(theme_dark())
+```
+
+```{r results = 'asis'}
+#  %>% knitr::kable(caption = "Table with kable")
+``` 
+
+```{r}
+customers <- read_csv("~/shared/minor2_2018/1-intro/lab08-segmentation/customers.csv") 
+```
+
+```{r}
+customers %>% ggplot()+ 
+  geom_histogram(aes(Age)) + 
+  geom_vline(aes(xintercept = mean(Age))) + 
+  geom_vline(aes(xintercept = median(Age)))+
+  xlab("Age")+
+  ylab("Frequency")+
+  ggtitle("Age of customers")+
+  theme_bw()
+
+```
+
+
+```{r}
+customers %>% ggplot()+ 
+  geom_histogram(aes(Age, fill = Marital)) + 
+  geom_vline(aes(xintercept = mean(Age))) + 
+  geom_vline(aes(xintercept = median(Age)))+
+  xlab("Age")+
+  ylab("Frequency")+
+  ggtitle("Age of customers")+
+  theme_bw()
+```
+
+
+```{r}
+customers %>% group_by(Marital) %>% summarise(mean_age = mean(Age), median_age = median(Age))%>% knitr::kable(caption = "Average and median age of each clients for each marital status")
+```
+
+
+```{r}
+ggplot(customers)+
+  geom_bar(aes(Home))+
+  ylab("Frequency")+
+  xlab("Home")+
+  ggtitle("Distribution of clients")
+
+```
+
+
+```{r}
+
+customers %>% group_by(Home) %>% summarise(Percent = n()/nrow(customers)*100)%>% knitr::kable(caption = "Proportion of Home")
+
+```
+
+
+```{r}
+customers <- read_csv("~/shared/minor2_2018/1-intro/lab08-segmentation/customers.csv") 
+customers = customers %>% filter(!(Home %in% c("ignor", "other", "priv")))
+
+```
+
+
+```{r}
+t = customers %>% group_by(Job) %>% summarise(median_income = median(Income))
+ggplot(t)+geom_bar(aes(Job, median_income), stat = "identity")+theme_bw()+ggtitle("Job and income relation")+ylab("Average income")
+t%>% knitr::kable(caption = "Job and its average income")
+```
+
+
+
+```{r}
+ggplot(customers)+
+  geom_histogram(aes(Age, fill = Job))+
+  ggtitle("Distribution of customer's age")+
+  ylab("Frequency")+
+  xlab("Age")+
+  theme_bw()
+customers %>% filter(Job == "partime") %>% group_by(Age) %>% summarise(count_partime = n()) %>% head(5) %>% arrange(-count_partime)%>% knitr::kable(caption = "")
+```
+
+
+```{r}
+ggplot(customers)+
+  geom_point(aes(Income, Expenses))+
+  ggtitle("Income and expenses relation")+
+  theme_bw()
+```
+
+
+```{r}
+customers %>% group_by(Home) %>% summarise(Expenses = sum(Expenses))
+```
+
+
+```{r}
+customers = customers %>% mutate(Savings = Income - Expenses)
+```
+
+
+```{r}
+customers %>% group_by(Home, Job) %>% summarise(Savings = median(Savings)) %>% arrange(-Savings)%>%head(5) %>%  knitr::kable(caption = "Top median savings of home status")
+```
+
+#### Активы и долги
+
+Также в данных есть информация о текущих долгах клиента и его вложених. 
+
+Создайте новый датафрейм, в котором будут только записи о тех клиентах, у которых есть долг. В этой части анализировать эту подвыборку.
+
+```{r}
+data1 = customers %>% filter(Debt > 0)
+```
+
+У клиентов с каким семейным статусом долги больше? 
+
+```{r}
+data1 %>% group_by(Home) %>% summarise(debt = mean(Debt)) %>% arrange(-debt)
+```
+
+Зависит ли как-то рабочий стаж (Seniority) и текущая задолженность?
+
+```{r}
+data1 %>% group_by(Seniority) %>% summarise(sum_debt = sum(Debt)) %>% ggplot()+
+  geom_line(aes(Seniority, sum_debt))
+```
+
+### Отчет. Часть 2 -- с чем связана выплата кредита?
+
+```{r}
+#Добавим новую переменную -- Status, в которой записана информация о том, вернул ли клиент кредит или нет. 
+credit_data <- read_csv("~/shared/minor2_2018/1-intro/lab08-segmentation/credit-data.csv")
+customers <- read_csv("~/shared/minor2_2018/1-intro/lab08-segmentation/customers.csv") 
+
+#соедините таблицы
+df = left_join(customers, credit_data)
+
+```
+
+```{r}
+ggplot() + geom_count(data = df, aes(x = Status, Marital))
+
+table(df$Status, df$Marital)%>% knitr::kable(caption = "")
+
+```
+```{r}
+table(df$Status, df$Home)%>% knitr::kable(caption = "")
+
+table(df$Status, df$Job)%>% knitr::kable(caption = "")
+
+```

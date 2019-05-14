@@ -1,0 +1,43 @@
+```{r}
+cities = c("New York", "Paris", "London", "Hongkong", "Moscow", "Berlin", "Hanoi")
+lapply(cities, nchar)
+sapply(cities, nchar)
+str(sapply(cities, nchar))
+
+sapply(cities, nchar, USE.NAMES = FALSE)
+
+```
+
+```{r}
+first_and_last = function(name) {
+  name = gsub(" ", "", name)
+  letters = strsplit(name, split = "")[[1]]
+  c(first = min(letters), last = max(letters))
+}
+
+first_and_last("New York")
+
+
+
+sapply(cities, first_and_last)
+```
+
+
+
+
+```{r}
+unique_letters = function(name){
+  name = gsub(" ", "", name)
+  letters = strsplit(name, split = "")[[1]]
+  unique(letters)
+}
+
+
+unique_letters("London")
+
+
+lapply(cities, unique_letters)
+
+sapply(cities, unique_letters)
+```
+

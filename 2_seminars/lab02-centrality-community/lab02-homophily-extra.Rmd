@@ -1,0 +1,135 @@
+---
+title: 'DS Minor: Lab 02 -- Assortativity - tests'
+output: html_document
+---
+
+## Не только описание 
+
+Загрузите данные о переписке в небольшой  IT-компании, проводящей маркетинговые исследования на R. Данные содержат матрицу 17х17 с направленными связями.
+
+* help_seeking.csv -- связь A->B в сети означает, что A отправил запрос B с просьбой проверить код на адекватность, чтобы позднее отправить заказчику.
+
+```{r}
+help_seeking <- read.csv("~/shared/minor2_2018/2-tm-net/lab02-centrality-community/help_seeking.csv")
+```
+
+Мы можем провести анализ и для этой сети -- посчитать центральности и найти важные вершины, выделить сообщества. Но можно ли узнать что-то еще?
+
+### Ассортативность
+
+Для исследования структурных свойств сетей также можно оценить показатель **ассортативности или гомофилии**, т.е. того, насколько узлы склонны иметь связи с узлами, обладающими сходными свойствами. В этом случае мы уже добавляем в анализ не только сетевые, структурные характеристики (степень, битвинность и т.д.), но и какие-то внешние атрибуты (например, принадлежность к группе)
+
+```{r message=F, warning=FALSE}
+library(igraph)
+```
+
+Преобразуем сети в igraph объекты
+
+* как из матриц смежности можно получить объекты igraph?
+
+Дополнительно загрузим файл с атрибутами узлов -- attr, включающем имя (name), пол (sex), образование (education), уровень экспертизы (предположим, что знание R сотрудниками компании было зафиксировано и выражено в численной переменной expertise). 
+
+```{r}
+g_help_seeking = graph.adjacency(as.matrix(help_seeking))
+attr = read.csv("~/shared/minor2_2018/2-tm-net/lab02-centrality-community/attr.csv")
+V(g_help_seeking)$name
+
+```
+
+Добавим атрибуты к узлам сети
+```{r}
+V(g_help_seeking)$expertise = ifelse(V(g_help_seeking)$name %in% attr$name, attr$expertise, 0)
+V(g_help_seeking)$expertise
+
+plot(g_help_seeking)
+```
+
+Посчитаем коэффициент ассортативности
+```{r}
+assortativity(g_help_seeking, V(g_help_seeking)$expertise, directed = T)
+```
+
+Итак, мы получили коэффициент ассортативности. Он измеряется от -1 до 1, где -1 -- связи в сети склонны формироваться между узлами с отличающимися характеристиками, а 1 -- узлы предпочитают формировать связь с похожими узлами (в нашем случае, похожие по уровню знания R), 0 -- связи формируются без привязки к этой характеристике 
+
+Также можем посчитать ассортативность для категориальной переменной (обратите внимание на название функции)
+```{r}
+attr_sex = ifelse(V(g_help_seeking)$name %in% attr$name, attr$sex, 0)
+levels(attr_sex) = c(1, 0)
+
+V(g_help_seeking)$sex = attr_sex 
+assortativity_nominal(g_help_seeking, V(g_help_seeking)$sex, directed = T)
+```
+
+* какие выводы можно сделать?
+
+Насколько мы можем быть уверены в этом ответе? А что, если при отсутствии реальной взаимосвязи мы получим похожий результат? *Звучит знакомо, да?* Используем статистические тесты. 
+
+Предполагаем, что пол распределяется случайно -> перемешиваем, пересчитываем -> сравниваем, делаем выводы = знакомый тест перестановок
+
+```{r}
+
+g = g_help_seeking
+number_of_permutations = 1500
+assortativity_shuffled  <- rep(NA, number_of_permutations)
+for(i in 1:number_of_permutations){
+  V(g)$attr_shuffled = sample(V(g)$sex, replace = F)
+  assortativity_shuffled[i] = assortativity_nominal(g,as.factor(V(g)$attr_shuffled))
+}
+```
+
+Квантили при случайном перемешивании
+```{r}
+g = g_help_seeking
+number_of_permutations = 1500
+assortativity_shuffled  <- rep(NA, number_of_permutations)
+for(i in 1:number_of_permutations){
+  V(g)$attr_shuffled = sample(V(g)$sex, replace = F)
+  assortativity_shuffled[i] = assortativity_nominal(g,as.factor(V(g)$attr_shuffled))
+}
+q <- quantile(assortativity_shuffled, c(0.05, 0.95))
+q
+```
+
+Реальная ассортативность
+```{r}
+g = g_help_seeking
+number_of_permutations = 1500
+assortativity_shuffled  <- rep(NA, number_of_permutations)
+for(i in 1:number_of_permutations){
+  V(g)$attr_shuffled = sample(V(g)$sex, replace = F)
+  assortativity_shuffled[i] = assortativity_nominal(g,as.factor(V(g)$attr_shuffled))
+}
+q <- quantile(assortativity_shuffled, c(0.05, 0.95))
+q
+assortativity_real = assortativity_nominal(g, V(g)$sex, directed = T)
+assortativity_real
+```
+p-value
+```{r}
+g = g_help_seeking
+number_of_permutations = 1500
+assortativity_shuffled  <- rep(NA, number_of_permutations)
+for(i in 1:number_of_permutations){
+  V(g)$attr_shuffled = sample(V(g)$sex, replace = F)
+  assortativity_shuffled[i] = assortativity_nominal(g,as.factor(V(g)$attr_shuffled))
+}
+q <- quantile(assortativity_shuffled, c(0.05, 0.95))
+q
+assortativity_real = assortativity_nominal(g, V(g)$sex, directed = T)
+assortativity_real
+pvalue = sum(abs(assortativity_shuffled) >= abs(assortativity_real)) / number_of_permutations
+pvalue
+```
+
+И можно график нарисовать
+```{r}
+library(ggplot2)
+df <- data.frame(assortativity_shuffled = assortativity_shuffled) 
+ggplot(df) +
+  geom_histogram(aes(assortativity_shuffled), fill="lightgreen") + 
+  geom_vline(xintercept=assortativity_real, color="black")+ 
+  geom_vline(xintercept=q[1], color="red") +
+  geom_vline(xintercept=q[2], color="red") + theme_bw()
+```
+
+* Выводы?

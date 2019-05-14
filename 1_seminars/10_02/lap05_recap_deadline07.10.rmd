@@ -1,0 +1,192 @@
+---
+title: "Самостоятельная работа. Lab 5"
+output: html_document
+---
+
+Сегодня вы поработаете с двумя датасетами:
+  
+1) Выручка топовых компаний России за 2015-2016гг. по данным сайта [Эксперт](http://expert.ru/northwest/2016/45/rejting-250-krupnejshih-kompanij-szfo/)
+2) Вопросы и ответы с тегом R на сайте stackoverflow.com (ваш помощник на ближайшие два года)   
+
+## Часть 1. Топ-250 компаний.
+
+Данные будем загружать из файла. Для этого используем функцию read_csv.
+
+```{r, echo=TRUE}
+library(dplyr)
+library(ggplot2)
+library(readr)
+?read_csv
+top_companies <- read_csv("~/shared/minor2_2018/1-intro/data/top_companies.csv")
+top_companies = top_companies %>% select(brand = `Бренды`,
+                                         company = `Наименование компании`,
+                                         owner = `Ключевые собственники`,
+                                         income2016 = `Вырчука, 2016 г.`,
+                                         income2015 = `Выручка, 2015 г.`,
+                                         region = `Регион`,
+                                         industry = `Отрасль`)
+```
+
+
+Постройте график распределения выручки (представлена в млн. рублей) компаний за 2016 год (income2016). Напоминаем, что для того, чтобы проанализировать распределение числовой переменной, мы используем гистограмму или боксплот.
+
+(!) почему нельзя использовать параметр "binwidth = 1"? Как вы думаете?
+Answer:
+  Потому что в колонке 'income2016' есть широкое распространение данных (полтора миллион..). Если мы используем 'binwidth = 1', у нас будет миллион колонк в гистограме.
+
+```{r, echo=TRUE}
+ggplot() + geom_histogram(data = top_companies, aes(x = income2016), fill = '#999999', col = '#111111')+
+   ggtitle("Распределение выручки компаний за 2016 год")+
+  xlab("Млн. рублей")+
+  ylab("Частота")+
+  theme_bw()
+```
+
+```{r, echo=TRUE}
+ggplot() + geom_boxplot(data= top_companies, aes(x = factor(0), y = income2016), fill = '#ffffff', col = '#000000') + 
+  xlab(" ")+
+  ylab("Млн. рублей")+
+  ggtitle("Распределение выручки компаний за 2016 год")+
+  theme_bw()
+```
+
+Как вы видите, у нас есть очень сильные выбросы, из-за которых бОльшая часть нашего распределения находится у самого начала оси X или же, в случае боксплота, у начала оси Y. Cкладывается впечатление, что выручка для большинства компаний равна 0, но это же не так!. Давайте, чтобы немного улучшить ситуацию, оставим только 95 % наблюдений и по ним построим график. При помощи функции `quantile(top_companies$income2016, 0.95)` мы можем узнать, что значение, которое отделяет 95 % наблюдений -- это 138303.7. Давайте оставим только те наблюдения, у которых income меньше 138303.7, и снова построим график.
+
+```{r, echo=TRUE}
+q = quantile(top_companies$income2016, 0.95)
+
+top_companies %>% 
+  filter(income2016 < q) %>%
+  ggplot() + 
+  geom_histogram(aes(x=income2016))+
+  ggtitle("Распределение выручки компаний за 2016 год")+
+  xlab("Млн. рублей")+
+  ylab("Частота")+
+  theme_bw()
+```
+
+Какому ключевому собственнику (owner) принадлежит наибольшее количество брендов из нашего топа компаний. Из финального списка удалите NA (функция `na.omit`) и отавьте верхние 5 значений.
+Для того, чтобы оставить первые 5 значений, можно использовать функцию `top_n`
+
+```{r, echo=TRUE}
+?top_n
+top_companies %>% group_by(owner) %>% dplyr::summarize(brand_count = n()) %>% arrange(-brand_count) %>% na.omit() %>% top_n(5)
+```
+
+Создайте новую колонку, в которой посчитаете разницу в прибыли между 2016 и 2015 годами. Какая компания больше всех прибавила в позициях?
+
+```{r, echo=TRUE}
+top5_companies = top_companies %>% mutate(difference_income = income2016 - income2015) %>% arrange(-difference_income) %>% top_n(5)
+top5_companies
+```
+
+Найдите топ-3 регионов по медианной выручке компаний (income2016). Запишите результат в дф под названием top3_regions.
+```{r, echo=TRUE}
+top3_regions = top_companies %>% group_by(region) %>% summarize(median_income = median(income2016))%>% top_n(3, median_income)
+top3_regions
+```
+
+Из оригинального датасета оставьте только компании, находящиеся в топе-3 регионов, полученные в предыдущем задании -- поможет оператор `%in%`. Чтобы успешно использовать оператор `%in%`, нужно, при использовании функции filter, в то место, куда мы обычно записываем логические выражения, на основе которых фильтруем датасеты, записать следующее: `region %in% top3_regions$region`. Таким образом, мы оставляем в векторе region только те значения, которые есть в векторе top3_regions$region.
+Постройте график, чтобы сравнить распределение выручки компаний в этих регионах.
+
+```{r, echo=TRUE}
+p = top_companies %>% filter(region %in% top3_regions$region)
+ggplot(data = p)+
+  geom_bar(aes(x = region))+
+   ggtitle("Распределение выручки компаний в топ-3 регионов")+
+  xlab("Регион")+
+  ylab("Выручка")+
+  theme_bw()
+  
+```
+
+Найдите топ-5 отраслей (industry) с максимальными выручками брендов и постройте bar plot, в котором на оси X будут названия отраслей, а ось Y будет представлять максимальные значения, которые мы нашли. Не забудьдте, что если мы хотим в качестве значений оси Y использовать значения конкретного столбца, нам нужно указать, что `stat = "identity"`.
+Сделайте так, чтобы столбцы в диаграмме шли по убыванию значения max. Для этого в aes для оси X напишите не просто industry, a `reorder(industry, -max)`.
+```{r, echo=TRUE}
+top5 = top_companies %>% group_by(industry) %>% summarise(profit = max(income2016)) %>% top_n(5)
+ggplot(data = top5)+
+  geom_bar(aes(x = reorder(industry, -profit, max), y = profit), stat = 'identity')+
+  ggtitle("Топ-5 отраслей с максимальными выручками брендов")+
+  xlab("Отраслей")+
+  ylab("Максимальныые выручки брендов")+
+  theme_bw()
+```
+
+
+
+##Часть 2. Вопросы и ответы
+
+Итак, у нас есть данные, собранные с сайта stackoverflow.com. Это вопросы пользователей, связанные с написанием кода на языке R, ответы на эти вопросы, а также теги, которые были проставлены вопросам. В первую очередь, давайте подгрузим эти данные.
+
+```{r, echo=TRUE}
+library(dplyr)
+questions <- read_csv("~/shared/minor2_2018/1-intro/data/questions_sample.csv")
+answers <- read_csv("~/shared/minor2_2018/1-intro/data/answers_sample.csv")
+tags <- read_csv("~/shared/minor2_2018/1-intro/data/tags_sample.csv")
+questions = dplyr::select(questions, Id, OwnerUserId, Score:Body)
+answers = dplyr::select(answers, ParentId, OwnerUserId, answer.score = `Score`, accepted = `IsAcceptedAnswer`, answer.body = `Body`)
+```
+
+А теперь нам их надо соединить. Благо, в пакете `dplyr` для этого есть функция join. Давайте при ее помощи сделаем один датасет, в котором будут вопросы и теги для них.
+```{r, echo=TRUE}
+?left_join
+```
+
+```{r, echo=TRUE}
+qtags = left_join(questions, tags, by=NULL)
+qtags
+```
+
+Теперь давайте найдем самые популярные теги (те, которые чаще всего встречаются в нашем новом датасете). Сделайте bar plot, в котором по оси X будут 10 самых популярных тегов, а ось Y будет показывать, сколько раз они встречаются. Остортируйте столбы по убыванию. Не забудьте удалить NA!
+
+```{r, echo=TRUE}
+p = qtags %>% group_by(Tag) %>% summarise(count = n()) %>% arrange(-count)%>% na.omit() %>% top_n(10)
+ggplot(data = p)+
+  geom_bar(aes(x = Tag, y = count), stat = 'identity')+
+  ggtitle("Самые популярные теги")+
+  xlab("Теги")+
+  ylab("Количество")+
+  theme_bw()
+```
+
+Теперь объединим вопросы и ответы и удалим NA для всего нового датасета. 
+
+```{r, echo=TRUE}
+qans = left_join(questions, answers, by = NULL)
+qans = na.omit(qans)
+```
+
+Давайте посмотрим, связана ли длина текста ответа с его рейтингом (Score). Для того, чтобы узнать, сколько символов в тексте ответа, нужно использовать функцию stringr::str_length. Какой график наиболее нам подходит для того, чтобы посмотреть связь между двумя количественными переменными? 
+Покрасьте цветом ответы в зависимости от того, были ли они приняты автором вопроса или нет (accepted).
+
+```{r, echo=TRUE}
+qans = mutate(qans, len_ans = stringr::str_length(answer.body))
+u = quantile(qans$answer.score, 0.99)
+v = quantile(qans$len_ans, 0.995)
+p = qans %>% filter(qans$answer.score <= u)
+p = p %>% filter(p$len_ans <= v)
+ggplot(data = p) + geom_point(aes(x = len_ans, y = answer.score, colour = accepted))+
+  scale_color_brewer(name = "Accepted", palette = "Set1")+
+  theme_minimal()+
+  xlab("Length of answer")+
+  ylab("Scored of answer")+
+  ggtitle("The relationship between the length of the answer and the rating")
+```
+
+Задайте вопрос к данным по StackOverflow и ответьте на него.
+
+Найти топ-10 самых популярных тег
+
+```{r, echo=TRUE}
+z = tags%>%group_by(Tag)%>%summarise(count = n())%>% arrange(-count)%>%top_n(10)
+z
+```
+
+---
+
+А теперь давайте соберем html-отчет и попробуем поделиться им с помощью гистов. 
+Инструкцию как пользоваться гистами можно найти тут "~/shared/minor2_2018/gists.pdf"
+
+Не забываем -- для создания html-отчета, нужно чтобы файлик RMarkdown у вас был сохранен в домашней папке. 
+
+Также, многие из вас интересовались, за что отвечают разные мистические надписи, вроде `echo = T` в заголовках чанков (серых кусков с кодом в .Rmd файлах, обозначающиеся ```). Давайте подсмотрим в шпаргалку и поэкспериментируем! 

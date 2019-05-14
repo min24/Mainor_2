@@ -1,0 +1,224 @@
+---
+title: "Lab 05. Recap"
+output: html_document
+---
+
+Прошлый раз мы разбивали тексты не только на отдельные слова (концепция "мешка слов"), но и добавили немного учета контекста и последовательности в анализ, исследуя n-граммы.
+
+В первой части сегодня мы продолжим работать с данными об отелях (уже лемматизированные отзывы)
+
+```{r}
+library(tidyverse)
+reviews = read_csv("~/shared/minor2_2018/2-tm-net/lab03-tm/reviews.csv")  
+# в колонке lem лемматизированные отзывы + нет пунктуации и чисел
+
+library(tidytext)
+rustopwords = data.frame(words=c(stopwords::stopwords("ru"), "это"), stringsAsFactors=FALSE)
+```
+
+**Повторение:**
+* Что такое n-граммы?
+* Разбейте отзывы на триграммы. Не забудьте удалить триграммы со стоп-словами. 
+
+```{r eval = F}
+reviews.trigrams = reviews %>% 
+  unnest_tokens(trigram, lem, token = "ngrams", n = 3)
+
+reviews.trigrams %>% 
+  dplyr::count(trigram, sort = TRUE)
+
+reviews.filtered = reviews.trigrams %>% 
+  separate(trigram, c("word1", "word2", "word3"), sep = " ") %>% 
+  filter(!word1 %in% stopwords::stopwords("ru")) %>% 
+  filter(!word2 %in% stopwords::stopwords("ru")) %>%
+  filter(!word3 %in% stopwords::stopwords("ru"))
+```
+
+Какая триграмма самая частая? А в отзывах на отели 4*? 
+
+```{r eval = F}
+reviews.trigrams %>% 
+  dplyr::count(trigram, sort = TRUE)
+
+reviews.trigrams %>% filter(stars == 4) %>%
+  dplyr::count(trigram, sort = TRUE)
+```
+
+А какая триграмма чаще всего встречается в негативных отзывах (оценки меньше 3)?
+
+```{r eval = F}
+reviews.trigrams %>% filter(rating < 3) %>%
+  dplyr::count(trigram, sort = TRUE)
+```
+
+Теперь посмотрим на нормализованные частоты (TF-IDF) -- их можно считать и n-грамм, не только для отдельных слов. Какие в этом случае самые характерные слова для каждой звезды?
+
+```{r eval = F}
+trigram.united <- reviews.filtered %>%
+  unite(trigram, word1, word2, word3, sep = " ")
+
+trigram_tf_idf <- trigram.united %>%
+  dplyr::count(trigram, stars) %>%
+  bind_tf_idf(trigram, stars, n) %>%
+  arrange(desc(tf_idf))
+```
+
+Для удобства можно нарисовать
+
+```{r eval = F}
+plot_trigram <- trigram_tf_idf %>% 
+  group_by(stars) %>% 
+  top_n(5) 
+
+ggplot(plot_trigram, aes(trigram, tf_idf)) +
+  geom_bar(stat = "identity", show.legend = FALSE) +
+  labs(x = NULL, y = "tf-idf") +
+  facet_wrap(~stars, scales = "free") +
+  coord_flip()
+```
+
+Общие принципы вспомнили, теперь возвращаемся к содержательному анализу. Зачем мы разбивали на биграммы? Какую дополнительную информацию нам это дало по сравнению с "мешком слов"?
+
+Разобьем на биграммы
+
+```{r}
+reviews.bigrams = reviews %>% 
+  unnest_tokens(bigram, lem, token = "ngrams", n = 2)
+
+reviews.bigrams %>% 
+  dplyr::count(bigram, sort = TRUE)
+
+library(tidyr)
+reviews.bifiltered = reviews.bigrams %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  dplyr::filter(!word1 %in% rustopwords$words) %>% 
+  dplyr::filter(!word2 %in% rustopwords$words) 
+
+bigrams_counts = reviews.bifiltered %>% 
+  dplyr::count(word1, word2, sort = TRUE)
+```
+
+Но кроме подсчета частот, мы можем использовать биграммы для другого анализа -- с помощью сетей
+
+### Сети слов
+
+Нарисуем сеть слов. Готовим датасет. Фильтруем, чтобы убрать множество редких слов
+
+```{r}
+library(igraph)
+bigram_graph <- bigrams_counts %>% filter(n > 20) %>% 
+  graph_from_data_frame()
+```
+
+Посмотрим на центральности:
+
+* топ слова по степени
+```{r}
+sort(degree(bigram_graph))
+#sort(degree(bigram_graph), decreasing = T)[1:10]
+```
+
+* топ слова по посредничеству
+```{r}
+sort(betweenness(bigram_graph))
+```
+
+Нарисуем
+```{r}
+plot(bigram_graph)
+```
+
+Ничего на графе не понятно. Попробуем перерисовать.
+
+До этого мы использовали визуализацию в igraph, но есть альтернативный способ визуализации - ggraph.
+
+Для более подробного знакомства посмотрите документацию пакета: https://cran.r-project.org/web/packages/ggraph/ggraph.pdf
+Также ответы на интересующие вас вопросы при построении сетей (и не только!) можно искать на stackoverflow.com
+
+Пакет ggraph по своей сути похож на уже известный вам ggplot2 - в них обоих визуализация прописывается слоями. 
+Но для того, чтобы его использовать, нужно создать графовый объект с помощью пакета igraph, что мы и сделали чуть выше
+
+```{r}
+library(ggraph)
+set.seed(2019)
+```
+
+Рисуем сеть (попробуйте запускать частями, чтобы посмотреть разделение на слои)
+```{r}
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link() +
+  geom_node_point() +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1)
+```
+
+Получилось не очень понятно. Мы можем работать с этими сетями как с привычными нам сетями и применять различные функции, например фильтрацию:
+
+* посчитаем степень
+```{r}
+V(bigram_graph)$degree = degree(bigram_graph, mode = 'total')
+```
+
+* удалим вершины, у которых степень меньше 5
+```{r}
+bigram_graph=delete_vertices(bigram_graph,V(bigram_graph)$degree < 5)
+```
+ 
+В этом случае уже видно гораздо лучше
+```{r}
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link() +
+  geom_node_point() +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1)
+```
+
+Сделаем график еще понятнее: добавим стрелки, указывающие порядок слов и зададим интенсивность цвета ребра в зависимости от частоты встречаемости биграммы
+```{r}
+# тип стрелок  
+a <- grid::arrow(type = "closed", length = unit(.1, "inches"))
+
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE, arrow = a) +
+  geom_node_point(aes(size = degree(bigram_graph)),
+                  color = "steelblue") +
+  geom_node_text(aes(label = name), color = 'black', vjust = 1, hjust = 1) +
+  theme_void()
+
+```
+
+* Замените размер узла на betweenness
+```{r eval = F}
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(...) +
+  geom_node_point(...) +
+  geom_node_text(...) +
+  theme_void()
+```
+
+В сетях мы можем выделять сообщества. Посмотрим, что нам это даст в этом случае
+
+```{r}
+bc <- walktrap.community(bigram_graph)
+m = factor(membership(bc))
+
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE, arrow = a) +
+  geom_node_point(aes(size = degree(bigram_graph),
+                      color = m)) +
+  geom_node_text(aes(label = name), color = 'black', vjust = 1, hjust = 1) +
+  theme_void()
+```
+
+* Что получилось в сообществах? Можно ли выделить интерпретируемые группы?
+
+```{r}
+sort(m)
+m[m==7]
+m[m==5]
+```
+
+**Задание**
+
+1. Разделите отзывы на две части: 1) негативные -- оценка < 3 и 2) позитивные -- оценка == 5
+2. Постройте для каждой из частей сеть (фильтрацию по степени можно сделать разную, т.к. негативных отзывов мало и степень там будет в целом меньше)
+3. Выделите в сетях сообщества. Отличаются ли темы сообществ?
+

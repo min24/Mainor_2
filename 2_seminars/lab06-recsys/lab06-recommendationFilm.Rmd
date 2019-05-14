@@ -1,0 +1,336 @@
+---
+title: "Recommendation System"
+author: "Alena Suvorova"
+output: html_document
+---
+
+Сегодня мы рассмотрим пример построения небольшой рекомендательной системы в R. Используем пакет  `recommenderlab` <https://cran.r-project.org/web/packages/recommenderlab/vignettes/recommenderlab.pdf>
+
+
+###Загрузка данных
+
+Работаем с данными о фильмах
+
+```{r message = FALSE}
+library(tidyverse)
+```
+
+Для того, чтобы не перегружать сервер (из-за одновременного запуска кода во время лабораторной) мы немного сократили данные, оставив 1000 пользователей
+
+```{r message = F}
+movies <- read_csv("~/shared/minor2_2018/data/movies_cut.csv")
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
+ratings = ratings %>% dplyr::select(-X1)
+```
+
+
+
+### Оценки фильмов пользователями
+
+Сохраним только оценки пользователей и фильмы
+
+```{r}
+rates = dplyr::select(ratings, customer_id, movie_id, rating)
+```
+
+Преобразуем к таблице в "широком" формате
+
+```{r}
+library(tidyr)
+
+rates = spread(rates, key = movie_id, value = rating)
+```
+
+Для дальнейшей работы в данных должны остаться только оценки, поэтому переведем сначала пользователей в имена строк 
+
+```{r}
+
+rownames(rates) = rates$customer_id
+rates = select(rates, -customer_id)
+```
+
+Начинаем работать с пакетом `recommenderlab`
+
+```{r message=FALSE, warning=FALSE}
+library(recommenderlab)
+```
+
+Преобразуем данные с оценками в тот формат, который "понимает" этот пакет. Таких форматов несколько, нас интересует тот, где используются численные оценки (не бинарные, а с большим числом значений) -- realRatingMatrix
+
+```{r}
+
+rates = as.matrix(rates)
+r = as(rates, "realRatingMatrix")
+r
+```
+
+Каждая строчка соответствует пользователю, столбец -- фильму, на пересечении -- оценки. Однако в полной матрице 1000*507 было бы слишком много пропущенных значений (каждый пользователь оценивает существенно меньше фильмов, чем есть в датасете). Поэтому используется более компактный способ хранения.
+
+*Обратите внимание* -- датасет хранится в объекте класса realRatingMatrix, а не data.frame или matrix. Поэтому есть особенности работы с такими данными, например, ряд специальных функций именно для рекомендательных систем. И функции пакета dplyr с такими данными не работают
+
+```{r}
+
+head(rowMeans(r))
+```
+
+### Похожесть по оценкам
+
+Похожесть (similarity) может определяться разными способами
+
+* Коэффициент Пирсона;
+* Косинусное расстояние;
+* Евклидово расстояние.
+
+Рассмотрим, например, похожесть первых 10 пользователей. Смотрим на диагональ: пользователь полностью похож на себя, поэтому 0 -- полная схожесть, 1 -- полная несхожесть 
+
+```{r}
+similarity_users10 <- recommenderlab::similarity(r[1:10, ], method = "cosine", which = "user")
+
+as.matrix(similarity_users10)
+```
+
+Или в виде графика (heatmap)
+
+```{r}
+image(as.matrix(similarity_users10), main = "User similarity")
+```
+
+Таким же образом можно посчитать и схожесть между фильмами. Найдите самые похожие фильмы из первых десяти:
+
+```{r}
+rates2 = dplyr::select(ratings, customer_id, movie_id, rating)
+rates2 = spread(rates2, key = customer_id, value = rating)
+rownames(rates2) = rates2$movie_id
+rates2 = select(rates2, -movie_id)
+rates2 = as.matrix(rates2)
+r2 = as(rates2, "realRatingMatrix")
+r2
+head(rowMeans(r2))
+similarity_film10 <- recommenderlab::similarity(r2[1:10, ], method = "cosine", which = "film")
+as.matrix(similarity_film10)
+image(as.matrix(similarity_film10), main = "Film similarity")
+
+```
+
+
+### Предварительная подготовка данных
+
+Сначала подготовим данные, в частности, уберем те, что являются нерелевантными. 
+
+Если фильм редкий, его мало кто видел, то оценки для него могут быть сильно смещенными. Так же и для пользователя -- если он оценил малое число фильмов, то ему сложно дать рекомендацию. 
+
+Как определить, что является "малым числом"? В общем случае -- итерационно, т.е. отбираем данные, строим модель, оцениваем ее и так несколько раз. В данном примере рассмотрим только один шаг -- будем считать, что нас интересуют фильмы с не менее 10 оценками и пользователи, поставившие не менее 5 оценок.
+
+Количество оценок у фильма можно посчитать с помощью функции colCounts(), а количество оценок, поставленных одним пользователем -- с помощью rowCounts(). 
+
+```{r}
+ggplot(data = data.frame(filmRate=colCounts(r))) + geom_histogram(aes(x=filmRate))
+ggplot(data = data.frame(userRate=rowCounts(r))) + geom_histogram(aes(x=userRate))
+```
+
+Отберем только строки и столбцы с нужным количеством оценок. Сколько фильмов осталось?
+
+```{r}
+ratings_movies <- r[
+  rowCounts(r) > 5,
+  colCounts(r) > 10] 
+ratings_movies
+
+```
+
+Рассмотрим распределение средних оценок пользователя
+
+```{r}
+average_ratings_per_user <- rowMeans(ratings_movies)
+ggplot()+geom_histogram(aes(x=average_ratings_per_user)) +
+ggtitle("Распределение средних оценок пользователей")
+```
+
+### Метод коллаборативной фильтрации
+
+* вычислить похожесть всех пар фильмов
+* для каждого фильма найти k наиболее похожих
+* для каждого пользователя определить фильмы, наиболее близкие к тем, которые он оценил
+
+Разделим данные на тестовую и обучающую выборки. На обучающей построим модель, для пользователей из тестовой будем рекомендовать фильмы.
+
+```{r}
+set.seed(100)
+test_ind <- sample(1:nrow(ratings_movies), size = nrow(ratings_movies)*0.2)
+recc_data_train <- ratings_movies[-test_ind, ]
+recc_data_test <- ratings_movies[test_ind, ]
+```
+
+Возможны разные методы построения модели. Рассмотрим метод IBCF ("Recommender based on item-based collaborative filtering (real data).")
+
+![](https://cdn-images-1.medium.com/max/1000/1*QvhetbRjCr1vryTch_2HZQ.jpeg)
+
+Построим рекомендательную модель
+```{r}
+
+recc_model <- Recommender(data = recc_data_train, method = "IBCF", parameter = list(k = 30))
+recc_model
+```
+
+Детали этой модели можно получить с помощью метода getModel(), например, матрицу схожести
+
+```{r}
+
+model_details <- getModel(recc_model)
+model_details$description
+model_details$sim[1:10, 1:10]
+```
+
+Рекомендации
+
+* для каждого пользователя извлекаются те фильмы, которые он оценил
+* для каждого из фильмов находятся похожие фильмы
+* затем фильмы упорядочиваются согласно весам, где вес каждой рекомендации (фильма) вычисляется на основе оценок пользователя и показателей схожести фильмов (взвешенная сумма)
+
+```{r}
+
+recc_predicted <- predict(object = recc_model, newdata = recc_data_test, n = 6)
+recc_predicted
+```
+
+Посмотрим на результат
+```{r}
+
+str(recc_predicted)
+```
+
+Слоты (доступ через символ @) 
+
+* items -- содержит индексы рекомендованных фильмов для каждого пользователя
+* itemLabels -- названия фильмов
+* ratings -- рейтинги рекомендаций
+* n -- число рекомендаций
+
+Рекомендации для первого пользователя
+```{r}
+
+recc_user_1 <- recc_predicted@items[[1]]
+recc_user_1
+```
+
+Это результат в виде номер строк в матрице, вытащим id фильмов
+
+```{r}
+
+movies_user_1 <- recc_predicted@itemLabels[recc_user_1]
+movies_user_1
+```
+
+А теперь посмотрим на названия. Функция `match` возвращает позицию, на которой элементы из первого параметра встретились во втором (см. `?match`)
+
+Например
+
+```{r}
+
+match(c(1,5,3,2,8,1), 1:10)
+match(c("r","a","s","c","d"), letters)
+```
+
+Для названий фильмов
+
+```{r}
+
+names_movies_user_1 <- ratings$title[match(movies_user_1, ratings$movie_id)]
+names_movies_user_1
+```
+
+Посмотрим на предсказанные рейтинги. Например, для пользователя с id=1097436. Что Вы можете сказать о лучших рекомендованных ему фильмах?
+
+```{r}
+set.seed(100)
+test_ind <- sample(1:nrow(ratings_movies), size = nrow(ratings_movies)*0.2)
+recc_data_train <- ratings_movies[-test_ind, ]
+recc_data_test <- ratings_movies[test_ind, ]
+recc_model <- Recommender(data = recc_data_train, method = "IBCF", parameter = list(k = 30))
+recc_model
+model_details <- getModel(recc_model)
+model_details$description
+model_details$sim[1:10, 1:10]
+recc_predicted <- predict(object = recc_model, newdata = recc_data_test, n = 6)
+recc_predicted
+recc_user_1 <- recc_predicted@items[[1]]
+recc_user_1
+movies_user_1 <- recc_predicted@itemLabels[recc_user_1]
+movies_user_1
+names_movies_user_1 <- ratings$title[match(movies_user_1, ratings$movie_id)]
+names_movies_user_1
+recc_predicted@ratings["1097436"]
+```
+
+**Ваша очередь:** 
+
+Постройте рекомендательную систему на основе схожести между пользователями, а не между фильмами (метод UBCF вместо IBCF). Сравните для какого-нибудь пользователя результаты рекомендации
+
+```{r}
+
+recc_predicted@ratings["1097436"]
+```
+```{r}
+set.seed(101)
+test_ind1 <- sample(1:nrow(ratings_movies), size = nrow(ratings_movies)*0.2)
+recc_data_train1 <- ratings_movies[-test_ind1, ]
+recc_data_test1 <- ratings_movies[test_ind1, ]
+recc_model1 <- Recommender(data = recc_data_train1, method = "UBCF", parameter = list(k = 30))
+recc_model1
+model_details1 <- getModel(recc_model1)
+model_details1$description
+model_details1$sim[1:10, 1:10]
+recc_predicted1 <- predict(object = recc_model1, newdata = recc_data_test1, n = 6)
+recc_predicted1
+str(recc_predicted1)
+recc_film_1 <- recc_predicted1@ratings[[1]]
+recc_film_1
+movies_user_1 <- recc_predicted1@itemLabels[recc_user_1]
+movies_user_1
+names_movies_user_1 <- ratings$customer_id[match(movies_user_1, ratings$movie_id)]
+names_movies_user_1
+recc_predicted@ratings["1097436"]
+```
+
+**Ваша очередь:** 
+
+Постройте рекомендательную систему на основе схожести между пользователями, а не между фильмами (метод UBCF вместо IBCF). Сравните для какого-нибудь пользователя результаты рекомендации
+
+```{r}
+set.seed(101)
+test_ind1 <- sample(1:nrow(ratings_movies), size = nrow(ratings_movies)*0.2)
+recc_data_train1 <- ratings_movies[-test_ind1, ]
+recc_data_test1 <- ratings_movies[test_ind1, ]
+recc_model1 <- Recommender(data = recc_data_train1, method = "UBCF", parameter = list(k = 30))
+recc_model1
+model_details1 <- getModel(recc_model1)
+model_details1$description
+model_details1$sim[1:10, 1:10]
+recc_predicted1 <- predict(object = recc_model1, newdata = recc_data_test1, n = 6)
+recc_predicted1
+str(recc_predicted1)
+recc_film_1 <- recc_predicted1@ratings[[1]]
+recc_film_1
+movies_user_1 <- recc_predicted1@itemLabels[recc_user_1]
+movies_user_1
+match(c(1,5,3,2,8,1), 1:10)
+match(c("r","a","s","c","d"), letters)
+names_movies_user_1 <- ratings$title[match(movies_user_1, ratings$movie_id)]
+names_movies_user_1
+recc_predicted@ratings["1097436"]
+```
+
+
+**Задание на следующий этап:**
+
+* Анализ сети жанров/стран/производителей/... на основе совместного участия в производстве фильмов. Кластеризация и интерпретация полученных групп. 
+* Дополнительно: посчитать ассортативность, если имеет смысл. Например, для производителя добавить атрибутом — страну  
+* Построить рекомендательную систему 
+* Анализ датасета с привлечением дополнительных данных, найденных самостоятельно 
+
+
+
+
+
+
+

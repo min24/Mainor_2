@@ -1,0 +1,57 @@
+---
+title: "Анализ данных по .... "
+output: html_document
+---
+
+Данные на выбор
+```{r}
+library(igraph)
+library(readr)
+library(dplyr)
+#International Trade Network (ITN) https://github.com/MatthewSmith430/ITNr
+library(ITNr)
+data("ELEnet16") #уже в виде сети
+(ELEnet16)
+
+#Встречаемость персонажей в марвелы #https://www.kaggle.com/csanhueza/the-marvel-universe-social-network/version/1#nodes.csv
+marvel <- read_csv("~/shared/minor2_2018/data/marvel.csv")
+
+```
+
+
+## Шаг 1 Рисование
+
+```{r}
+#загрузка данных 
+graph1 = graph_from_data_frame(marvel)
+#создаем объект igraph из матрицы смежности (adjacency matrix) или списка ребер (edge list)
+
+#рисуем сеть 
+plot(graph1)
+```
+
+
+
+## Шаг 2 Центральности
+Кто в сети самый популярный? Что это может значить и как это можно использовать? 
+
+```{r}
+#degree 
+sort(desc(degree(graph1)))
+#betweenness
+sort(desc(betweenness(graph1)))
+#closeness
+sort(desc(closeness(graph1)))
+
+```
+
+## Шаг 3 Выделение сообществ
+Кластеризация и описание полученых групп. По какому признаку поделилась сеть? 
+
+```{r}
+# один из: fast greedy, edge betweenness, walktrap 
+
+
+
+```
+

@@ -1,0 +1,38 @@
+1) Нарисуйте boxplot (ящик с усами), в котором по оси X будут аэропорты Нью-Йорка, из которых вылетают самолеты, а по оси Y - дистанция.
+
+```{r ex4}
+library(nycflights13)
+library(dplyr)
+library(ggplot2)
+flData = nycflights13::flights
+ggplot(data = flData) + geom_boxplot(aes(x = origin, y = distance))
+```
+2) Нарисуйте гистограмму по переменной `hour`. Посмотрите, как работает параметр `coord_flip()`. Также вспомните, как менять цвет у графика.
+
+```{r ex5}
+ggplot(data = flData) + geom_histogram(aes(x = hour), fill = 'pink', col = 'black', binwidth = 1)+
+  coord_flip()+
+  facet_grid(~ origin)
+  
+
+```
+3) Нарисуйте bar chart по переменной `carrier`. Закрасьте столбцы таким образом, чтобы можно было видеть, сколько перелетов для каждого перевозчика относятся к каждому из трех аэропортов, работающих в Нью-Йорке.
+
+
+```{r ex6}
+ggplot(data = flData) + geom_bar(aes(x = carrier, fill = origin), position = "dodge")
+```
+
+```{r}
+x <- c(1,2,3,4,5)
+x == 2
+
+```
+
+```{r}
+flData$origin == 'JFK' | flData$origin == 'MIA'
+```
+```{r}
+
+```
+

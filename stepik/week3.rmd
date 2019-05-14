@@ -1,0 +1,99 @@
+
+
+
+```{r}
+#загрузим необходимые для урока пакеты 
+library(tidyverse)
+library(tidytext)
+library(stringr)
+```
+
+```{r}
+shaverma = read_csv("~/shared/minor2_2018/data/shaverma.csv")
+#запишем тексты в отдельную колонку
+shaverma$reviews = shaverma$text
+```
+
+```{r}
+shaverma_words = shaverma %>% 
+  #оставьте только две колонки id и reviews
+  unnest_tokens(words, reviews) %>% na.omit() 
+  #удалите все пропущенные значения
+shaverma_words$metro = str_detect(shaverma_words$words, "_")
+shaverma_words %>% filter(metro == TRUE) %>% group_by(words) %>% summarise(count = n()) %>% arrange(-count)
+
+
+```
+
+
+```{r}
+shaverma$text = str_replace_all(shaverma$text, "#", "hstg")
+shaverma$reviews = shaverma$text
+
+shaverma_words = shaverma %>% 
+  #оставьте только две колонки id и reviews
+  unnest_tokens(words, reviews) %>% na.omit()
+shaverma_words %>% filter(str_detect(words, "hstg")) %>% group_by(words) %>% summarise(like = mean(likes.count)) %>% arrange(-like) %>% head(5)
+```
+
+
+
+```{r}
+shaverma = read_csv("~/shared/minor2_2018/data/shaverma.csv")
+
+#shaverma$text = shaverma$text %>% str_remove_all("[[:punct:]]") %>% str_remove_all("[[:digit:]]")
+#запишем тексты в отдельную колонку
+shaverma$reviews = shaverma$text
+rustopwords <- data.frame(words=stopwords::stopwords("ru"), stringsAsFactors=FALSE) #загрузит словарь со стоп-словами
+shaverma_words = shaverma %>% 
+  #оставьте только две колонки id и reviews
+  unnest_tokens(words, reviews)
+
+
+shaverma_words = shaverma_words %>% filter(!str_detect(words, "[[:digit:]]")) %>% filter(!str_detect(words, "[[:punct:]]{2,}"))
+
+shaverma_words = shaverma_words %>% anti_join(rustopwords)
+shaverma_words %>% filter(str_detect(words, "шаверма")) %>% count()
+```
+
+
+
+```{r}
+vv <- read.csv("~/shared/minor2_2018/2-tm-net/lab03-tm/vv.csv", stringsAsFactors=FALSE)
+
+#приведите тексты к длинному формату 
+vv.tidy <- vv %>% select(title,  text) %>% unnest_tokens(words, text)
+
+#оставьте только стоп-слова из пакета stopwords
+vv.tidy = vv.tidy %>% inner_join(rustopwords)
+
+#создайте переменную author, где будет указано все до первой точки 
+vv.tidy <- vv.tidy %>%
+    mutate(author = str_extract(title, '[^.]+')) 
+
+#составьте частотный список по каждому из отрывков книг данных авторов
+vv.tdm = group_by(vv.tidy, title, author) %>%
+    dplyr::count(words, sort = TRUE) %>% ungroup()
+
+#приведем данные в широкий формат с функцией spread, чтобы полученную таблицу использовать для построения дерева решений
+??spread 
+vv.tdm = vv.tdm %>% spread(words, n, fill = 0)
+
+#оставим только фамилию автора в данных    
+vv.tdm = vv.tdm %>% select(-title)
+vv.tdm$author <- factor(vv.tdm$author)
+table(vv.tdm$author)
+
+#обязательно используйте set.seed при выполнении задания
+library(rpart)
+set.seed(12)
+
+#постройте классификационное дерево предсказывающее автора текста от используемых слов. вспомните, чем классификация отличается от регрессии
+vv.tree <- rpart(author ~ ., data = vv.tdm, method = "class") # method = "class"
+vv.tree
+
+library(rpart.plot)
+#дополнительно можете визуализировать дерево
+vv.tree %>% prp()
+```
+

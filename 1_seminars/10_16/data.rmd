@@ -1,0 +1,48 @@
+```{r}
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(lubridate)
+
+orders <- read_csv('~/shared/minor2_2018/midterm1/data/orders11.csv')
+inventory <- read_csv('~/shared/minor2_2018/midterm1/data/inventory.csv')
+users <- read_csv('~/shared/minor2_2018/midterm1/data/users.csv')
+
+join = left_join(orders, users, by='user_id')
+join%>%group_by(user_id, first_name, last_name)%>%summarise(sum_order = sum(quantity))%>%dplyr::arrange(desc(sum_order))
+
+
+
+
+```
+
+```{r}
+b = left_join(orders, inventory, by='inventory_id')%>%filter(category == 'Cars')%>%group_by(item)%>%summarise(count = n())%>%arrange(-count)
+b
+```
+```{r}
+b2 = left_join(orders, inventory, by='inventory_id')%>%filter(category == 'Phones')%>%group_by(item)%>%summarise(count = n())%>%arrange(-count)
+b2
+```
+
+```{r}
+c = full_join(full_join(users, orders, by='user_id'), inventory, by='inventory_id')%>%filter(category == 'Cookies')%>%group_by(job_title)%>%summarise(count = n())%>%arrange(-count)
+c
+```
+```{r}
+d = full_join(full_join(users, orders, by='user_id'), inventory, by='inventory_id')%>%filter(country == 'Tajikistan')%>%mutate(wday = wday(date, label = TRUE))%>%group_by(wday)%>%summarise(count = n())%>%arrange(-count)
+d
+```
+
+```{r}
+e = full_join(full_join(users, orders, by='user_id'), inventory, by='inventory_id')%>%group_by(user_id, first_name, last_name, job_title)%>%summarise(sum_money = sum(quantity*price))%>%arrange(-sum_money)
+e
+```
+
+
+
+
+```{r}
+e1 = full_join(full_join(users, orders, by='user_id'), inventory, by='inventory_id')%>%mutate(money = quantity*price)%>%group_by(user_id, first_name, last_name)%>%summarise(sum_money = sum(money))%>%arrange(-sum_money)
+e1
+```

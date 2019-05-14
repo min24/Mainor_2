@@ -1,0 +1,39 @@
+```{r}
+nibrs_arrestee = read_csv("nibrs_arrestee.csv")
+
+nibrs_offense_type = read_csv("nibrs_offense_type.csv") %>% select(offense_type_id, offense_name)
+nibrs_arrestee = nibrs_arrestee %>% left_join(nibrs_offense_type) %>% select(-offense_type_id)
+
+nibrs_age = read_csv("nibrs_age.csv") %>% select(age_id, age_name)
+nibrs_arrestee = nibrs_arrestee %>% left_join(nibrs_age) %>% select(-age_id)
+nibrs_arrestee$sex = ifelse(nibrs_arrestee$sex_code == "M", "Male", "Female")
+nibrs_arrestee = nibrs_arrestee %>% select(-sex_code)
+race = read_csv("race.csv")
+race = race %>% select(race_id, race_desc)
+
+nibrs_arrestee  = nibrs_arrestee %>% left_join(race) %>% select(-race_id)
+
+nibrs_arrest_type <- read_csv("nibrs_arrest_type.csv")
+
+nibrs_arrest_type = nibrs_arrest_type %>% select(-arrest_type_code)
+nibrs_arrestee  = nibrs_arrestee %>% left_join(nibrs_arrest_type) %>% select(-arrest_type_id)
+
+
+nibrs_ethnicity <- read_csv("nibrs_ethnicity.csv") %>% select(ethnicity_id, ethnicity_name)
+nibrs_arrestee  = nibrs_arrestee %>% left_join(nibrs_ethnicity) %>% select(-ethnicity_id)
+
+```
+```{r}
+motivation <- read_csv("nibrs_bias_motivation.csv")
+```
+
+```{r}
+nibrs_offender <- read_csv("nibrs_offender.csv")
+nibrs_offender = nibrs_offender %>% left_join(nibrs_age) %>% select(-age_id)
+nibrs_offender = nibrs_offender %>% left_join(race) %>% select(-race_id)
+nibrs_offender = nibrs_offender %>% left_join(nibrs_ethnicity) %>% select(-ethnicity_id)
+nibrs_offender$sex = ifelse(nibrs_offender$sex_code == "M", "Male", "Female")
+nibrs_offender = nibrs_offender %>% select(-sex_code)
+
+```
+

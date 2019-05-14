@@ -1,0 +1,371 @@
+---
+title: "hw4"
+author: "lnguen_1"
+date: "4/4/2019"
+output: 'html_document'
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+```{r}
+movies <- read_csv("~/shared/minor2_2018/data/movies.csv")
+ratings <- read_csv("~/shared/minor2_2018/data/ratings.csv")
+```
+
+ 
+```{r}
+library(readr)
+library(lubridate)
+library(readr)
+library(dplyr)
+library(stringr)
+library(tidytext)
+library(wordcloud2)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+```
+```{r}
+movies <- read_csv("C:/Users/Duy/Desktop/Mainor_2/data/movies.csv")
+ratings <- read_csv("C:/Users/Duy/Desktop/Mainor_2/data/ratings.csv")
+```
+
+```{r}
+
+##(Data Processing)
+
+```
+
+
+
+```{r}
+ratings1 = ratings %>% dplyr::group_by(movie_year, movie_id) %>% dplyr::summarise(count_rating = n(),
+                                                                     average_rating = mean(rating))
+
+movies = dplyr::full_join(movies, ratings1)
+```
+```{r}
+movies$income = movies$revenue - movies$budget
+```
+```{r}
+# formulate release_date
+movies$movie_year = as.character(movies$movie_year)
+movies$release_date = str_c(movies$release_date, movies$movie_year)
+movies$release_date = dmy(movies$release_date)
+```
+```{r}
+## ???????????????? ??????????????
+
+# source("/principal/courses/minor2_2018/2-tm-net/extract_json.R")
+
+# movies_with_genres = extract_json2(df = movies, col = "genres")
+
+```
+```{r}
+# extract all json data
+f = function(i) {
+  return(i%>% str_replace_all('name ', '') %>% str_c(collapse = ', '))
+}
+
+f1 = function(col){
+  x = col
+x = str_replace_all(x, '[\\[\\"\\]{}:]', '')
+y = str_extract_all(x, 'name [A-z]+')
+z = Map(f, y)
+z = as.character(z)
+return(z)
+}
+
+f1_id = function(col){
+  x = col
+x = str_replace_all(x, '[\\[\\"\\]{}:]', '')
+y = str_extract_all(x, '[A-z0-9]+, name')
+y = Map(f, y)
+return(y %>% str_replace_all(', name', ''))
+}
+
+movies$genres_id = f1_id(movies$genres)
+movies$keywords_id = f1_id(movies$keywords)
+movies$production_companies_id = f1_id(movies$production_companies)
+movies$production_countries_id = f1_id(movies$production_countries)
+movies$spoken_languages_id = f1_id(movies$spoken_languages)
+
+movies$genres = f1(movies$genres)
+movies$keywords = f1(movies$keywords)
+movies$production_companies = f1(movies$production_companies)
+movies$production_countries = f1(movies$production_countries)
+movies$spoken_languages = f1(movies$spoken_languages)
+
+```
+```{r}
+# remove unnecessary columns
+movies = movies %>% select(-spoken_languages, -status, -original_language, -original_title, -homepage)
+```
+```{r}
+# preview
+movies
+```
+
+
+
+
+
+
+```{r}
+##1. Описательная статистика по данным: постановка исследовательского вопроса (не менее 3), ответ на него с помощью графика и интерпретация результатов (3 балла)
+```
+
+##Top 10 films with the highest revenue
+```{r}
+movies$movie_year = as.numeric(movies$movie_year)
+knitr::kable(movies %>%select(title, movie_id, revenue, movie_year) %>% arrange(-revenue) %>% head(10))
+```
+
+
+
+##Top 10 films with the highest budget
+```{r}
+knitr::kable(movies %>%select(title, movie_id, budget, movie_year) %>% arrange(-budget) %>% head(10))
+```
+
+
+##Top 10 "disaster" movies (lowest income)
+```{r}
+knitr::kable(movies %>% filter(budget > 15 & revenue > 15) %>% select(title, movie_id, income, movie_year) %>% arrange(income) %>% head(10))
+```
+
+
+
+
+##Top 10 most popular movies
+```{r}
+knitr::kable(movies %>%select(title, movie_id, popularity, movie_year) %>% arrange(-popularity) %>% head(10))
+```
+
+
+##Top 10 most popular genres
+```{r}
+gen = movies %>%dplyr::select(title, movie_id, genres, movie_year) %>% tidytext::unnest_tokens(genre, genres) %>% dplyr::group_by(genre) %>% dplyr::summarise(count = n()) %>% dplyr::arrange(-count)
+knitr::kable(gen %>% head(10))
+```
+
+```{r}
+gen %>% ggplot()+geom_bar(aes(x = reorder(genre, count), y = count, fill = count), stat = "identity")+coord_flip()+
+  xlab("Number of films")+
+  ylab("Genre of films")+
+  ggtitle("The number of films in each genre")+
+  theme_bw()+
+  scale_fill_gradient("Count", low = "blue", high = "red")
+
+```
+
+
+
+##Top 10 companies produce the most movies
+```{r}
+knitr::kable(movies %>%select(title, movie_id, production_companies) %>% filter(production_companies != "character(0)") %>% tidytext::unnest_tokens(company, production_companies) %>% dplyr::group_by(company) %>% dplyr::summarise(count = n()) %>% dplyr::arrange(-count) %>% head(10))
+```
+
+
+
+##Distribution of the number of films produced by month
+```{r}
+movies$movie_month = lubridate::month(movies$release_date, label = TRUE)
+movies %>% dplyr::group_by(movie_month) %>% dplyr::summarise(count = n()) %>% ggplot()+geom_bar(aes(x = movie_month, y = count, fill = count), stat = "identity")+
+  xlab("Month")+theme_bw()+
+  ylab("Number of films")+
+  ggtitle("Distribution of the number of films produced by month")+
+  scale_fill_gradient("Count", low = "blue", high = "green")
+  
+
+```
+
+
+
+##Distribution of the number of films produced by year
+```{r}
+movies %>% dplyr::group_by(movie_year) %>% dplyr::summarise(count = n()) %>% ggplot()+
+  geom_bar(aes(x = movie_year, y = count, fill = count), stat = "identity")+coord_flip()+
+  xlab("Number of films")+
+  ylab("Year")+
+  ggtitle("Distribution of the number of films produced by year")+theme_bw()
+
+
+```
+
+```{r}
+##2. Текстовый анализ описаний к фильмам: связь описаний (частоты, сентимент, темы и т.д.) и какой-либо характеристики фильма (жанр, бюджет и т.д.) -- не менее 2 вопросов (5 баллов)
+```
+
+ 
+
+
+```{r}
+# Remove punctuation in overview and tagline
+library(NLP)
+library(tm)
+movies$overview = removePunctuation(str_to_lower(movies$overview))
+movies$tagline = removePunctuation(str_to_lower(movies$tagline))
+```
+```{r}
+# lemmatization text in overview and tagline
+library(textstem)
+library(koRpus.lang.en)
+library(koRpus)
+library(data.table)
+movies$overview = lemmatize_strings(movies$overview)
+movies$tagline = lemmatize_strings(movies$tagline)
+
+```
+```{r}
+# list stop words
+enstopwords = data.frame(words=stopwords::stopwords("en"), stringsAsFactors=FALSE) 
+```
+
+
+```{r}
+# list sentiment of words in english
+library(tidytext)
+sentiments_bing = tidytext::get_sentiments("bing") %>% dplyr::mutate(words = word) %>% dplyr::select(words, sentiment)
+sentiments_nrc = tidytext::get_sentiments("nrc") %>% dplyr::mutate(words = word) %>% dplyr::select(words, sentiment)
+sentiments_afinn = tidytext::get_sentiments("afinn") %>% dplyr::mutate(words = word) %>% dplyr::select(words, score)
+
+```
+
+## Annalys keywords
+
+
+### Frequency of keywords
+```{r}
+# draw word cloud of keywords
+wordcloud2(data = movies %>% unnest_tokens(words, keywords) %>% dplyr::group_by(words) %>% dplyr::summarise(count = n()) %>% dplyr::arrange(-count)%>% anti_join(enstopwords, by = "words")) 
+
+keywords = movies %>% unnest_tokens(words, keywords) %>% dplyr::group_by(words) %>% dplyr::summarise(count = n(), rating_key = mean(average_rating)) %>% dplyr::arrange(-count)%>% anti_join(enstopwords, by = "words")
+```
+
+```{r}
+# top 10 keywords most popular
+knitr::kable(keywords %>% head(10))
+
+```
+
+```{r}
+keywords %>% inner_join(sentiments_afinn) %>% arrange(score)
+keywords %>% inner_join(sentiments_afinn) %>% arrange(-score)
+
+```
+
+
+
+
+
+
+
+
+```{r}
+key2 = movies %>% tidytext::unnest_tokens(words, keywords) %>% inner_join(sentiments_nrc, by="words") %>% tidytext::unnest_tokens(genre, genres)
+conf = as.data.frame.matrix(table(key2$genre, key2$sentiment))
+conf$rating = movies %>% tidytext::unnest_tokens(genre, genres) %>% dplyr::group_by(genre) %>% dplyr::summarise(rating = mean(average_rating), n = n())
+conf$mean_rating = conf$rating["rating"]
+conf$count = conf$rating["n"]
+conf = conf %>% select(-rating)
+knitr::kable(conf)
+```
+
+```{r}
+movies %>% unnest_tokens(words, tagline) %>% inner_join(sentiments_nrc, by = "words") %>% unnest_tokens(genre, genres) %>% group_by(genre, sentiment)%>%summarise(count = n()) %>%  ggplot()+geom_histogram(aes(x = genre,y = count, fill = sentiment), stat = "identity")+
+  theme(axis.text.x = element_text(angle=60))
+```
+
+
+
+```{r}
+#keywords
+key1 = movies %>% tidytext::unnest_tokens(words, keywords) %>% inner_join(sentiments_bing, by="words") %>% tidytext::unnest_tokens(genre, genres)
+conf1 = as.data.frame.matrix(table(key1$genre, key1$sentiment))
+conf1 = data.frame(row.names(conf1), conf1$negative, conf1$positive)
+knitr::kable(conf1 %>% arrange(-conf1.negative))
+```
+
+
+
+
+
+
+```{r}
+movies %>% dplyr::select(title, movie_id, genres, keywords) %>%tidytext::unnest_tokens(words, keywords) %>% dplyr::inner_join(sentiments_afinn, by = "words") %>% unnest_tokens(genre, genres) %>% dplyr::group_by(genre) %>% dplyr::summarise(count = n(), score = sum(score)) %>% arrange(score)
+```
+
+
+
+
+
+## Annalys tagline
+
+
+```{r}
+# draw world cloud for text in tagline
+# wordcloud2(data = movies %>% unnest_tokens(words, tagline) %>% dplyr::group_by(words) %>% dplyr::summarise(count = n()) %>% arrange(-count) %>% anti_join(enstopwords, by = "words") %>% na.omit())
+
+tagline = movies %>% unnest_tokens(words, tagline) %>% dplyr::group_by(words) %>% dplyr::summarise(count = n(), rating = mean(average_rating)) %>% dplyr::arrange(-rating) %>% anti_join(enstopwords, by = "words") %>% na.omit()
+```
+![alt text here](overview.JPG)
+
+```{r}
+# top 10 words in tagline most popular
+knitr::kable(tagline %>% head(10))
+```
+
+```{r}
+tagline %>% inner_join(sentiments_afinn) %>% arrange(score) %>% head(10)
+tagline %>% inner_join(sentiments_afinn) %>% arrange(-score) %>% head(10)
+
+```
+
+
+
+## Analysis overview
+
+### Frequence of words in overviews
+
+```{r}
+overview = movies %>% tidytext::unnest_tokens(words, overview) %>% dplyr::anti_join(enstopwords)
+
+# wordcloud2::wordcloud2(data = overview %>% dplyr::group_by(words) %>% dplyr::summarise(count = n()) %>% filter(count>10))
+```
+![alt text here](overview.JPG)
+
+
+```{r}
+overview %>% dplyr::group_by(words) %>% dplyr::summarise(count = n()) %>% arrange(-count)
+
+```
+
+
+
+
+
+```{r}
+genre_score = overview %>% inner_join(sentiments_afinn, by = "words") %>% unnest_tokens(genre, genres) %>% dplyr::group_by(genre) %>% dplyr::summarise(score = sum(score)) %>% arrange(-score)
+genre_score
+
+ggplot(data = genre_score)+ geom_bar(aes(x = reorder(genre, score), y = score, fill = abs(score)), stat = "identity")+
+  theme_bw() + scale_fill_gradient("Score")+
+  theme(axis.text.x = element_text(angle=60))+
+  xlab("Genre") + ylab("Sum score of words\n in all overviews in each genre")+
+  ggtitle("Difference of the sentiment of words \nin overviews distribution used in each movie genre")
+```
+
+
+
+```{r}
+b = overview %>% group_by(words) %>% summarise(count = n()) %>% inner_join(sentiments_afinn, by ="words")
+b %>% arrange(-score)
+b %>% arrange(score)
+
+```
+
+
+

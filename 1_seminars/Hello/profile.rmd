@@ -1,0 +1,31 @@
+# Нгуен Лонг Зюи
+![моя фотография](https://sun9-6.userapi.com/c830308/v830308707/16c28a/FV9PJNu61-k.jpg)
+
+[Страница ВК](https://vk.com/id393871942)
+
+## About me:
+
+Меня зовут **Зюи**, мне *21 лет*, я буду вашим ***одногруппником***
+
+
+## Мне нравятся:   
++ Peterburg
++ Data Science    
++ Adventure
++ Challenge
++ Sleep
++ Music
+    
+
+I'm from Vietnam, I can speak Russian and English.
+
+## Cколько пар у меня есть в недели:
+```{r echo=FALSE}
+Frequency <- c(4,2,4,1,3,2,0)
+plot(Frequency, type="o", col="blue",axes=FALSE, ann=FALSE)
+axis(1, at=1:7, lab=c("Mon","Tue","Wed","Thu","Fri","Sat","Sun"))
+axis(2, las=1, at=0:4)
+title(main="How many pairs I have", col.main="green", font.main=4)
+title(xlab="Days", col.lab=rgb(0,0.5,0))
+title(ylab="Frequency", col.lab=rgb(0,0.5,0))
+```

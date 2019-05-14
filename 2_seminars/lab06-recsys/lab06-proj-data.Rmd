@@ -1,0 +1,275 @@
+---
+title: "netflix_exploration"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+ 
+```{r}
+library(tidyverse)
+```
+
+# Часть 1. Данные для проекта
+
+С данными вы уже познакомились во время домашнего задания, теперь продолжим с ними работать. Для ускорения работы используем сокращенный датасет с оценками 
+ 
+```{r}
+movies <- read_csv("~/shared/minor2_2018/data/movies.csv")
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
+```
+ 
+Датасет movies содержит 545 кинокартин и 18 переменных. 
+ 
+```{r}
+dim(movies)
+colnames(movies)
+```
+
+title - название на английском
+movie_id - уникальный индентификатор фильма
+
+budget - сколько было потрачено на съемки фильма
+genres - жанры (обратите внимание, как записана эта переменная, мы к этому еще вернемся)
+homepage - ссылка на официальный сайт
+keywords - ключевые слова
+original_language - язык оригинала
+original_title - навзвание оригинала, может быть на русском, испанском и т.д.
+overview - краткое описание фильма
+popularity - оценка популярости в процентах (может быть больше 100, с сайта themoviedb.org)
+production_companies - студии-производители
+production_countries - страны-производители
+release_data - дата выхода в прокат
+revenue - кассовые сборы
+runtime - продолжительноть фильма
+spoken_language - язык, на котором фильм показывает Netflix
+status - фильм в прокате или нет
+tagline - слоган
+ 
+Датасет ratings содержит 36751 оценок и 6 переменных (X1 -- просто номера строк, можно удалить)
+ 
+```{r}
+dim(ratings)
+colnames(ratings)
+ratings = ratings %>% dplyr::select(-X1)
+```
+ 
+customer_id - уникальный индентификатор пользователя Netflix
+rating - числовая оценка пользователя от 1 до 5
+rating_date - дата выставления оценки
+movie_id - уникальный индентификатор фильма
+movie_year - год выпуска фильма (1900-2005)
+title - название фильма
+ 
+Сколько мы наблюдаем пользователей?
+ 
+```{r}
+length(unique(ratings$customer_id))
+```
+ 
+Итого, мы знаем оценки 1000 пользователей (25000 в исходных данных) к 545 фильмам. Исходные данные собраны таким образом, что в них нет "лишних" фильмов и пользователей - каждый фильм имеет какое-то количество оценок и каждый пользователь оценил какое-то количество фильмов. Проверим так ли это в сокращенном датасете
+ 
+Сколько фильмов в среднем оценивает пользователь? Есть ли пользователи без оценок? Есть ли фильмы без оценок?
+ 
+```{r}
+df = ratings %>% 
+  group_by(customer_id) %>% 
+  summarise(n = n())
+ 
+ggplot(df, aes(x = n)) +
+    geom_histogram(binwidth = .5, colour = "black", fill = "white") +
+    geom_vline(aes(xintercept = mean(n, na.rm = T)),   # Ignore NA values for mean
+               color = "red", linetype = "dashed", size = 1)
+mean(df$n)
+
+films = ratings %>% 
+  group_by(movie_id) %>% 
+  summarise(n = n())
+
+dim( films)
+```
+ 
+С рейтингами разобрались, а что там с кино?
+ 
+Для начала посмотрим на распределение количества оценок для фильмов. Что это за распределение? Каким законом оно объясняется? 
+ 
+```{r}
+vote_count = ratings %>% 
+  group_by(movie_id) %>% 
+  summarize(count = n())
+
+ggplot(vote_count, aes(x = count)) +
+    geom_histogram(colour = "black", fill = "white") +
+    geom_vline(aes(xintercept = mean(count, na.rm = T)),   # Ignore NA values for mean
+               color = "red", linetype ="dashed", size=1)
+```
+ 
+Распределение фильмов по годам выпуска.
+ 
+Предположите, с чем может быть связан пик в начале 2000-х.
+
+```{r}
+years_count = ratings %>% 
+  select(movie_year, title) %>% 
+  unique()
+
+ggplot(years_count, aes(x = movie_year)) +
+    geom_histogram(colour = "black", fill = "white")
+```
+ 
+Распределение оценки популярности с сервиса TMDb. 
+
+```{r}
+ggplot(movies, aes(x = popularity)) +
+    geom_histogram(colour = "black", fill = "white") +
+    geom_vline(aes(xintercept = mean(popularity, na.rm = T)),   # Ignore NA values for mean
+               color = "red", linetype = "dashed", size = 1)
+ 
+
+```
+ 
+Связана ли популярность с бюджетом?
+
+```{r}
+ggplot(data = movies, aes(x = budget, y = popularity)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+ 
+А теперь посчитайте среднюю оценку для каждого фильма у пользователей нетфликса, добавьте колонку со средней оценкой в датафрейм по фильмам и проверьте, есть ли взаимосвязь у такой метрики популярности с бюджетом?
+ 
+```{r}
+a = ratings %>% group_by(movie_id) %>% summarise(rating = mean(rating, na.rm = T))
+movies = movies %>% full_join(a, by = "movie_id")
+ggplot(data = movies, aes(x = budget/1000000, y = rating)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+
+```
+ 
+Вы, наверное, заметили что некоторые колонки содержат целые списки переменных. Например, жанры и студии-производители. Прочитать их можно следующим образом:
+ 
+```{r}
+# загрузим функцию
+source("~/shared/minor2_2018/2-tm-net/extract_json.R") 
+
+movies_with_genres = extract_json(df = movies, col = "genres")
+```
+
+Нарисуйте боксплоты, показывающие разницу в выручке между фильмами, принадлежащими к жанру Action, и остальными.
+
+```{r}
+ggplot(data = movies_with_genres, aes(x = factor(Action), y = revenue))+ geom_boxplot()
+```
+
+
+
+# Часть 2. Немного сетевого анализа
+
+Вытащим жанровую принадлежность каждого фильма в матрицу
+
+```{r}
+meta <- movies %>% 
+  dplyr::select(movie_id, genres)
+
+meta_n = extract_json(df = meta, col = "genres")
+ 
+rownames(meta_n) <- str_c("id", meta_n$movie_id, sep = "_")
+ 
+meta_n = meta_n %>% 
+  select(-movie_id, -genres) %>% 
+  as.matrix()
+```
+
+Теперь можно применить навыки сетевого анализа
+ 
+У нас в сети два типа узлов - фильмы и жанры. Такой тип графа называется двудольным. Из двудольной сети мы можем получить две проекции, например, фильм - фильм, где связь - общий жанр. Или жанр - жанр, где связь - общий фильм.
+ 
+```{r}
+library(igraph)
+ 
+g <- graph_from_incidence_matrix(meta_n)
+ 
+is.bipartite(g)
+#  фильм - фильм, где связь - общий жанр
+pr = bipartite.projection(g) 
+ 
+p <- pr[[1]]
+p
+ 
+V(p)$label <- NA
+lt = layout.fruchterman.reingold(p)
+plot(p, vertex.size = 2, layout = lt)
+ 
+```
+ 
+Очень плохо видно! Слишком плотно, на такой сети вряд ли выделятся осознанные кластеры. В такой ситуации мы предпочтем взвешенную проекцию обычной проекции. Один из подходов был разработан Ньюманом. Суть заключается в том, чтобы взвесить силу связи между фильмами на популярность жанра. Таким образом связь между двумя фильмами непопулярного жанра documentary будет сильнее, чем связь между фильмами супер популярного жанра drama. После взвешенивания связей следует удалить наиболее слабые, чтобы увидеть структуру сети более четко.
+ 
+Давайте взвесим и построим распределение силы связи между фильмами с указанием среднего.
+ 
+```{r}
+library(igraph)
+library(survival)
+library(tnet)
+
+
+movies_id <- rownames(meta_n)
+
+df <- data.frame(movies = stringr::str_replace(movies_id, "id_", ""), i = 1:545)
+ 
+p = projecting_tm(meta_n, method="Newman")
+p <- left_join(p, df, by = "i")
+ 
+df <- data.frame(movies_1 = str_replace(movies_id, "id_", ""), j = 1:545)
+p <- left_join(p, df, by = "j")
+p = dplyr::select(p, i = movies, j = movies_1, w)
+ggplot(p) + 
+  geom_histogram(aes(x=w), fill = "pink") +
+  geom_vline(aes(xintercept=mean(w)), color="blue", linetype="dashed", size=1) +
+  xlab("Newman's coefficient") 
+ 
+```
+ 
+ 
+Мы можем попробовать удалить все связи, у которых сила ниже среднего, а можем самостоятельно подобрать число, например - 0.03.
+ 
+```{r}
+p1 = filter(p, w >= 0.03) %>% select(-w) # здесь можно менять w
+ 
+set.seed(483)
+
+net1 <- simplify(graph_from_edgelist(as.matrix(p1), directed=F))
+V(net1)$color <- "steel blue"
+V(net1)$label <- NA
+ 
+plot(net1, vertex.label.color = "black", vertex.size = 3, layout = layout.kamada.kawai(net1))
+```
+ 
+Отлично, теперь лучше видно структуру! Должны быть и кластеры.
+ 
+```{r, dpi=100, fig.height=7, fig.width=7}
+membership = membership(fastgreedy.community(net1))
+ 
+plot(net1, layout = layout.kamada.kawai(net1), edge.arrow.size = 0, vertex.color = membership, vertex.size = 5,vertex.label.cex = 0.4, margin = -0.1)
+?fastgreedy.community
+
+```
+```{r}
+mem = data.frame(movie_id = V(net1)$name %>% as.numeric(), 
+                 membership = membership %>% as.numeric())
+mem2 = mem %>% inner_join(movies %>% select(movie_id, title))
+
+table(membership)
+
+
+mem67 = mem2 %>% filter(membership %in% c(6,7))
+
+
+df = movies %>% dplyr::select(movie_id, title) %>% filter(movie_id %in% mem67$movie_id)
+```
+
+Мы получили кластеры фильмов, похожих по набору жанров, и теперь можем осознано рекомендовать пользователю фильмы из одного кластера.
+
+```{r}
+
+```
+

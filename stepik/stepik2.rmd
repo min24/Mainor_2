@@ -1,0 +1,98 @@
+---
+title: "stepik2"
+output: html_document
+---
+
+```{r}
+#install.packages('igraph')
+```
+
+```{r}
+#загрузка библиотек
+library(readr)
+library(igraph)
+
+#загрузка датасета
+game_of_thrones <- read_csv("https://stepik.org/media/attachments/lesson/77014/game_of_thrones.csv")
+
+#создание igraph объекта
+got_net <- graph_from_data_frame(game_of_thrones, directed = FALSE)
+
+#нахождение количества связей для каждой вершины
+#plot(got_net, vertex.label=NA, vertex.size=3)
+
+sort.int(-degree(got_net))
+
+#вывод вершины с наибольшим degree
+#Tyrion-Lannister
+
+```
+
+```{r}
+a = closeness(got_net)
+sort(a)
+
+```
+
+```{r}
+fastgreedy.community(got_net)
+```
+
+
+```{r}
+library(stats)
+x = degree(got_net)
+y = closeness(got_net)
+cor(x, y)
+
+```
+
+```{r}
+#загрузка библиотек
+library(readr)
+library(igraph)
+
+#загрузка датасетов
+game_of_thrones1 <- read_csv("https://stepik.org/media/attachments/lesson/77014/game_of_thrones1.csv")
+game_of_thrones5 <- read_csv("https://stepik.org/media/attachments/lesson/77014/game_of_thrones5.csv")
+
+#создание igraph объекта
+got_net1 <- graph_from_data_frame(game_of_thrones1, directed = FALSE)
+got_net5 <- graph_from_data_frame(game_of_thrones5, directed = FALSE)
+
+#нахождение разницы в количестве связей для Daenerys-Targaryen в первой и пятой книгах
+degree(got_net5)['Daenerys-Targaryen'] - degree(got_net1)['Daenerys-Targaryen']
+
+```
+
+```{r}
+cheating <- as.matrix(read.csv("https://stepik.org/media/attachments/lesson/77984/cheating.csv"))
+attr2 <- read_csv("https://stepik.org/media/attachments/lesson/77984/attr2.csv")
+levels(attr2$sex) = c(1,0)
+cheating_net = graph_from_adjacency_matrix(cheating)
+
+V(cheating_net)$GPA = ifelse(V(cheating_net)$name %in% attr2$ID, attr2$GPA, 0)
+
+cheating_net
+
+
+mean(attr2$GPA)
+
+assortativity(cheating_net, V(cheating_net)$GPA, directed = T)
+
+```
+
+```{r}
+assortativity(cheating_net, V(cheating_net)$GPA, directed = T)
+
+V(cheating_net)$sex = ifelse(V(cheating_net)$name %in% attr2$ID, attr2$sex, 0)
+
+assortativity_nominal(cheating_net, V(cheating_net)$sex, directed = T)
+
+```
+
+
+
+
+
+

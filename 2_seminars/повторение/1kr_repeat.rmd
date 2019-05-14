@@ -1,0 +1,22 @@
+---
+title: "kr_repeat"
+author: "lnguen_1"
+date: "22 01 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(MASS)
+data(cats)
+?cats
+```
+
+```{r}
+
+```
+
+

@@ -1,0 +1,98 @@
+
+```{r}
+
+library(dplyr)
+Alabama = read_csv("Alabama.csv") %>% mutate(state = "Alabama")
+Arkansas = read_csv("Arkansas.csv")%>% mutate(state = "Arkansas")
+Missouri = read_csv("Missouri.csv")%>% mutate(state = "Missouri")
+Texas = read_csv("Texas.csv")%>% mutate(state = "Texas")
+Virginia = read_csv("Virginia.csv")%>% mutate(state = "Virginia")
+
+```
+
+
+```{r}
+city = rbind(Alabama, Arkansas, Missouri, Texas, Virginia)
+all_city = rbind(Alabama, Arkansas, Missouri, Texas, Virginia)
+```
+
+
+```{r}
+city = city %>% select(RACE_DESC, AGE_NUM, state)
+city$age_group = floor((city$AGE_NUM - 1.5)/5) + 1
+city$age_group1 = (city$age_group - 1)*5 + 1.5
+
+city$age_group2 = (city$age_group - 1)*5 + 6.5
+
+city$group_age = paste(city$age_group1, city$age_group2, sep = " - ")
+city$mean_age = (city$age_group - 1)*5 + 4
+```
+
+```{r}
+write.csv(city, "city.csv", row.names = FALSE)
+
+```
+
+```{r}
+library(stringr)
+a = "a"
+b = "b"
+c = paste(a, b, sep = " - ")
+```
+
+```{r}
+city = city %>% select(state, RACE_DESC, AGE_NUM, group_age, mean_age)
+```
+```{r}
+```
+
+
+
+#======================================================
+```{r}
+# ?aov
+# ?anova
+# a = table(city$RACE_DESC, city$group_age)
+# anova(a)
+```
+
+```{r}
+tbl = table(city$RACE_DESC, city$group_age)
+chisq.test(tbl)
+```
+
+```{r}
+res.aov2 <- aov(RACE_DESC ~ group_age, data = city)
+summary(res.aov2)
+```
+```{r}
+aov(formula = AGE_NUM ~ RACE_DESC, data = city)
+# Compute the analysis of variance
+res.aov <- aov(AGE_NUM ~ RACE_DESC, data = city)
+# Summary of the analysis
+summary(res.aov)
+```
+
+
+```{r}
+TukeyHSD(res.aov)
+```
+
+```{r}
+table( city$RACE_DESC,city$group_age)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+city = city %>% arrange(mean_age)
+tbl = table(city$group_age, city$RACE_DESC)
+tbl = as.data.frame.matrix(tbl)
+tbl$group_age = rownames(tbl)
+key = city %>% select(mean_age, group_age) %>% distinct()
+tbl = tbl %>% inner_join(key) %>% arrange(mean_age) %>% select(-mean_age)
+tbl = tbl[c(7,1,2,3,4,5,6)]
+write.csv(tbl, "tbl.csv")
+
+```
+

@@ -1,0 +1,13 @@
+
+```{r}
+library(readr)
+library(stringr)
+tutor_reviews <- read_csv("~/shared/minor2_2018/data/tutor_reviews.csv")
+
+# Как учесть случаи, когда после точки нет пробела перед новым словом? 
+# Подсказка:
+
+tutor_reviews$review = str_replace_all(tutor_reviews$review, "[:punct:]+", " ") # заменяем пунктуацию на пробел, а не на пустое место
+tutor_reviews$review = str_replace_all(tutor_reviews$review, "  ", " ") # удаляем лишние пробелы между словами
+```
+

@@ -1,0 +1,434 @@
+---
+title: Text mining. Lab 2
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+## Вспоминаем стилометрию
+
+Давайте попробуем вспомнить, что такое стилометрия.
+Подгрузем датасет, в котором содержатся последние посты из пабликов "Медиазона" и "Комсомольская правда".
+Посмотрим, как отличается использование некоторых местоимений в этих постах.
+
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(stringr)
+```
+
+```{r}
+media = read_csv("~/shared/minor2_2017/2-tm-net/lab02_tf_idf/media.csv")
+
+media_tidy = media %>% 
+  na.omit() %>%
+  unnest_tokens(words,text)
+```
+
+```{r}
+pers.pronouns <- c("они", "мы", "он", "она", "я", "вы")
+pronouns.df <- data.frame(words = pers.pronouns, stringsAsFactors = FALSE)
+
+pron.dtm <- media_tidy %>%
+    inner_join(pronouns.df) %>%
+    group_by(media) %>%
+    dplyr::count(words, sort=TRUE) %>%
+    cast_sparse(media, words, n)
+```
+
+```{r}
+pron.pca <- prcomp(pron.dtm)
+
+ggbiplot::ggbiplot(pron.pca, labels = rownames(pron.dtm))
+```
+
+## Автоматический анализ содержания текста
+
+На прошлой паре мы обсуждали, что по частотному распределению самых
+распространенных слов можно автоматически различать стиль разных
+авторов. Если же рассмотреть частотное распределение знаменательных
+слов (прежде всего — существительных), можно автоматически различать
+тексты разной тематики.
+
+Сегодня мы попробуем автоматический анализ тематики на примере
+задачи кластеризации текстов. 
+
+## Векторное представление документов
+
+Мы с ним уже встречались: это то же самое, что и данные в широком
+формате, и то же самое, что и матрица термов-документов. Каждый
+документ можно представить как вектор в многомерном пространстве. 
+
+```{r}
+text1 = c("я" = 1, "облака" = 1, "фиолетовая" = 1, "вата" = 1,
+          "розовые" = 0, "мечтал" = 0, "долго" = 0,
+          "прости" = 0, "малая" = 0, "мне" = 0, "надоело" = 0)
+
+text2 = c("я" = 1, "облака" = 1, "фиолетовая" = 0, "вата" = 0,
+          "розовые" = 1, "мечтал" = 1, "долго" = 1,
+          "прости" = 0, "малая" = 0, "мне" = 0, "надоело" = 0)
+
+text3 = c("я" = 1, "облака" = 0, "фиолетовая" = 0, "вата" = 0,
+          "розовые" = 0, "мечтал" = 0, "долго" = 0, 
+          "прости" = 1, "малая" = 1, "мне" = 1, "надоело" = 1)
+
+test_tdm = rbind(text1, text2, text3) # матрица термов-документов
+```
+
+Теперь мы можем сравнить не только отдельные слова, но и тексты,
+сравнив соответствующие им вектора. В качестве меры близости мы будем
+использовать косинус угла между векторами. 
+
+```{r}
+lsa::cosine(text1, text2)
+```
+
+Какая пара текстов похожа больше всего?
+
+```{r}
+lsa::cosine(t(test_tdm))
+```
+
+
+## Нормализованная частотность. TF-IDF
+
+Для кластеризации документов по содержанию не все слова одинаково
+полезны. Самые бесполезные — те, которые встречаются слишком часто
+(вне зависимости от тематики) и hapax legomena. Для различения
+документов полезнее всего слова из середины частотного
+распределения. Чтобы повысить вес таких слов и понизить вес остальных,
+придумали взвешенную частотность — TF-IDF. 
+
+* TF — term frequency (частота слова в документе) 
+* IDF — inverse documemnt frequency (обратная документная частота:
+  логарифм отношения количества документов в коллекции к числу
+  документов, в которых встречается данное слово)
+
+Сейчас мы научимся считать эту метрику на текстоах из датасета с реальными отзывами на отели Санкт-Петербурга с сайта TripAdviser!
+
+## Подготовка данных
+
+Прежде чем приступать к кластеризации, нам нужно подготовить векторное
+представление документов. 
+
+Загрузим данные и токенизируем тексты отзывов к отелям Санкт-Петербурга. Преобразуем их в длинный формат.
+
+**Лемматизация** Если мы интересуемся содеражнием, нам нужно считать разные формы
+слова одной и той же единицей. Для этого применяется лемматизация —
+автоматическое приведение слова к начальной форме. Мы провели эту
+операцию над текстами заранее с помощью программы [mystem](https://tech.yandex.ru/mystem/).
+
+```{r}
+reviews <- read_csv("~/shared/minor2_2017/2-tm-net/lab02_tf_idf/reviews.csv")  
+# в колонке lem лемматизированные отзывы + нет пунктуации и чисел
+
+reviews.tidy = reviews %>%    
+  select(id, lem) %>% 
+  unnest_tokens(words, lem)
+```
+
+Удалим стоп-слова, а также слишком редкие слова по порогу.
+
+```{r}
+rustopwords <- data.frame(words=stopwords::stopwords("ru"), stringsAsFactors=FALSE) 
+# словарь со стоп-словами
+
+reviews.tidy = reviews.tidy %>%
+  anti_join(rustopwords)
+
+words_count = reviews.tidy %>% 
+  dplyr::count(words) 
+
+words_count %>% 
+  ggplot() + 
+  geom_histogram(aes(x = n)) + 
+  theme_bw()
+
+#сколько слов встречается в текстах всего один раз?
+quantile(words_count$n, 0.55)
+quantile(words_count$n, 0.65)
+
+#удалим слишком редкие и наоборот, слишком распространенные
+words_count = words_count %>% 
+  filter(n > 5 & n < quantile(words_count$n, 0.95))
+
+reviews.tidy = reviews.tidy %>% 
+  filter(words %in% words_count$words)
+```
+
+После всей чистки у нас осталось сильно меньше слов, чем было изначально. Поэтому от некоторых отзывов могло или совсем ничего или пара слов. Уберем такие отзывы из базы для дальнейшего анализа. 
+
+```{r}
+# удалить отзывы от которых осталось мало слов
+reviews_count = reviews.tidy %>%
+    dplyr::count(id) %>%
+    filter(n>5) 
+
+# для оставшихся отзывов посчитаем метрику TF-IDF
+reviews_tf_idf = reviews.tidy %>%
+    filter(id %in% reviews_count$id) %>%
+    dplyr::count(id, words) %>%
+    bind_tf_idf(words, id, n)
+
+# приведем данные к широкому формату. создадим term-document matrix
+reviews.tdm = reviews_tf_idf %>%
+    dplyr::select(id, words, tf_idf) %>%
+    spread(words, tf_idf, fill = 0) 
+```
+
+Посчитаем косинусное расстояние между двумя векторами отзывов. Эти два текста наиболее похожи друг на друга.
+
+```{r}
+#посмотреть сами тексты отзывов
+reviews$review[reviews$id == "rn308356496"]
+reviews$review[reviews$id == "rn249258173"]
+
+review1 = reviews.tdm %>%
+    filter(id == "rn308356496") %>%
+    dplyr::select(-id) %>%
+    as.numeric()
+
+review2 = reviews.tdm %>%
+    filter(id == "rn249258173") %>%
+    dplyr::select(-id) %>% 
+    as.numeric()
+
+lsa::cosine(review1, review2)
+```
+
+Также можете посмотреть и сравнить следующие отзывы
+```{r}
+reviews$review[reviews$id == "rn200185561"]
+reviews$review[reviews$id == "rn199910483"]
+
+reviews$review[reviews$id == "rn362559149"]
+reviews$review[reviews$id == "rn314347256"]
+```
+
+
+**Задание**
+1. На датасете с постами из пабликов "Медиазоны" и "Комерсанта" повторить преобразование данных как выше.
+2. Выбрать 5 случайных текстов и найти среди них два самых похожих.
+
+```{r}
+
+```
+
+# Кластеризация
+
+Берем небольшую выборку текстов песен.
+
+```{r}
+lyrics <- read_csv("~/shared/minor2_2017/2-tm-net/lab02_tf_idf/tracks_lyrics.csv")
+
+lyrics = lyrics %>% 
+  dplyr::select(-artist, -words_n) %>% 
+  dplyr::rename(artist = artist_dis, lem = text.lem)
+
+lyrics = lyrics %>% 
+  filter(artist %in% c("виктор цой", "город 312", "нюша", "пицца"))
+
+lyrics.tidy = lyrics %>% 
+  dplyr::select(artist, title, lem) %>%
+  unnest_tokens(words, lem)
+
+lyrics.tidy = lyrics.tidy %>%
+  anti_join(rustopwords)
+
+words_count = lyrics.tidy %>% 
+  dplyr::count(words)
+
+words_count %>% 
+  ggplot() + 
+  geom_histogram(aes(x = n)) + 
+  theme_bw()
+
+words_count = words_count %>%
+  filter(n > 1 & n < quantile(words_count$n, 0.99))
+
+lyrics.tidy = lyrics.tidy %>%
+  filter(words %in% words_count$words)
+
+lyrics.tdm = lyrics.tidy %>% 
+  dplyr::count(artist, title, words) %>% 
+  spread(words, n, fill = 0)
+```
+
+2. Строим таблицу близостей, рисуем scatterplot
+3. Делаем кластеризацию.
+4. Добавляем в данные колонку с кластеризацией.
+5. Красим на scatterplot точки в разные цвета по кластерам.
+
+```{r}
+library(factoextra)
+df = lyrics.tdm[-(1:2)] %>% as.matrix()
+
+res <- hcut(df, hc_method = "ward.D", k = 4, stand = TRUE)
+factoextra::fviz_dend(res)
+
+fviz_cluster(res)
+
+clusters = cbind(lyrics.tdm[1:2], cluster = res$cluster)
+
+table(clusters$artist, clusters$cluster)
+
+clusters = inner_join(clusters, lyrics)
+```
+
+**Задание**
+1. Кластеризовать данные целиком с разными значениями параметра (кол-во
+кластеров).
+2. Построить графики.
+3. Для каждого кластера отобрать из данных соответствующие тексты
+(строки), найти самые частотные слова кластера.
+4. Проинтерпретировать кластеры по словам.
+
+## Анализ мнений и оценок (Sentiment analysis)
+
+Попробуем проанализировать эмоциональную окраску (оценку, sentiment) отзывов про отели. Для этого будем использовать словарь оценочной лексики Четверкина.
+
+```{r}
+sentdict <- read.table("~/shared/minor2_2017/2-tm-net/lab02_tf_idf/sentdict.txt", header=T, stringsAsFactors=F) # словарь оценочной лексики
+
+head(sentdict)
+tail(sentdict)
+```
+
+Так, для каждого отзыва мы можем посчитать, насколько оценочный характер он носит -- без привязки к характеру (позитивный или негативный). 
+
+```{r}
+reviews.sent = reviews.tidy %>% 
+  inner_join(sentdict) #почему используется inner_join, а не anti_join?
+
+reviews.sent_count = reviews.sent %>% 
+  group_by(id) %>% 
+  summarise(mean = mean(value)) #посчитаем
+
+reviews.sent_count %>% arrange(-mean) %>% head() # самые оценочные отзывы
+reviews$review[reviews$id == "rn280308837"]
+
+reviews.sent_count %>% arrange(mean) %>% head() # самые нейтральные отзывы
+reviews$review[reviews$id == "rn219370699"]
+```
+
+Теперь мы можем попытаться создать свой специфичный для наших данных сентимент-словарь.
+
+Возьмем за отрицательные отзывы все те, кто оценил отель на 1-2 балла, а положительные -- на 5. Посмотрим распределение оценок посетителей 
+
+```{r}
+reviews %>% ggplot() + geom_bar(aes(rating)) + theme_bw()
+
+positive = reviews.sent %>% filter(id %in% reviews$id[reviews$rating==5]) %>% mutate(sent = "positive")
+#можно дополнительно отфильтровать по полезности отзыва (stars == 5)
+
+negative = reviews.sent %>% filter(id %in% reviews$id[reviews$rating<3]) %>% mutate(sent = "negative")
+
+reviews.pmi = rbind(positive, negative) %>% dplyr::select(-id,-value)
+reviews.pmi = reviews.pmi %>% dplyr::count(words, sent) %>% spread(sent, n, fill = 0)
+```
+
+## Pointwise Mutual Information (PMI)
+
+Отберем оценочные слова из словаря Четверкина, характерные для каждого из классов с помощью PMI. 
+
+```{r}
+freq_p = reviews.pmi$positive
+freq_n = reviews.pmi$negative
+sum_p = sum(reviews.pmi$positive) 
+sum_n = sum(reviews.pmi$negative) 
+
+pmi_p = log((freq_p/sum_p)/((freq_p+freq_n)/(sum_p+sum_n)*sum_p/(sum_p+sum_n))+1, base=2)
+reviews.pmi$PMI_p = pmi_p
+
+pmi_n = log((freq_n/sum_n)/((freq_p+freq_n)/(sum_p+sum_n)*sum_n/(sum_p+sum_n))+1, base=2)
+reviews.pmi$PMI_n = pmi_n
+
+reviews.pmi %>% 
+  ggplot(aes(x=positive+negative, y=PMI_p-PMI_n, color=5*PMI_p-PMI_n, label=words)) +
+  scale_color_gradient2(low="red", high="blue") +
+  geom_point()
+
+reviews.pmi %>% 
+  ggplot(aes(x=positive+negative, y=PMI_p-PMI_n, color=5*PMI_p-PMI_n, label=words)) +
+  scale_color_gradient2(low="red", high="blue") +
+  geom_text(check_overlap = TRUE)
+```
+
+
+## Dunning log-likelihood (G2)
+
+
+```{r}
+g2 = function(a, b) {
+  c = sum(a)
+  d = sum(b)
+  E1 = c * ((a + b) / (c + d))
+  E2 = d * ((a + b) / (c + d))
+  return(2*((a*log(a/E1+1e-7)) + (b*log(b/E2+1e-7))))
+}
+
+reviews.pmi <- reviews.pmi %>% 
+  mutate(g2=g2(positive, negative))
+```
+
+
+Посмотрим на соотношения частотности, PMI и G2:
+
+```{r}
+reviews.pmi %>% 
+  ggplot(aes(x=positive-negative, y=g2, color=5*PMI_p-PMI_n, label=words)) +
+  scale_color_gradient2(low="red", high="blue") +
+  geom_point() 
+
+reviews.pmi %>% 
+  filter(PMI_p>0.5 | PMI_n>0.5) %>% 
+  ggplot(aes(x=positive-negative, y=g2, color=5*PMI_p-PMI_n, label=words)) + 
+  scale_color_gradient2(low="red", high="blue") + 
+  geom_text(check_overlap=TRUE)
+```
+
+**Задание**
+
+1. При построении оценочного словаря для нашей базы отзывов мы использовали только отзывы с оценками 1-2 и 5. Теперь ваша задача — пользуясь этим словарем вычислить степень положительного/отрицательного сентимента для всех отзывов из базы с оценками 3-4. Подсказка: используйте PMI_p и PMI_n в качестве меры оценочности. Постройте диаграмму рассеяния (scatterplot) с распределением этих отзывов по степени оценочности.
+
+2(*). Оцените, какие слова наиболее специфичны для отрицательных (1-2) и положительных (5) отзывов, не ограничиваяюсь только лексикой из словаря Четверкина, а учитывая полные тексты отзывов. Постройте облака слов и диаграмму рассеяния, иллюстрирующую, какие слова характерны для каждого класса отзывов.
+
+
+## Совместная встречаемость
+
+
+## N-граммы
+
+```{r}
+reviews.bigrams = reviews %>% 
+  unnest_tokens(bigram, lem, token = "ngrams", n = 2)
+
+reviews.bigrams %>% 
+  dplyr::count(bigram, sort = TRUE)
+
+library(tidyr)
+
+reviews.bifiltered = reviews.bigrams %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  filter(!word1 %in% stopwords::stopwords("ru")) %>% 
+  filter(!word2 %in% stopwords::stopwords("ru")) 
+
+reviews.bifiltered %>% 
+  select(word1, word2) %>% 
+  dplyr::count(word1, word2, sort = TRUE)
+
+reviews.bifiltered %>% 
+  filter(word2 == "центр") %>% 
+  select(word1, word2)
+
+reviews.bifiltered %>% 
+  filter(word2 == "центр") %>% 
+  dplyr::count(rating, word1, sort=TRUE) %>% 
+  filter(rating>3)
+
+reviews.bigrams = reviews.bifiltered %>% 
+  unite(bigram, word1, word2, sep = " ")
+```
+
+
