@@ -58,7 +58,6 @@ data = inner_join(data, movies)
 Определяем наличие цифр в названии и длину слогана
 
 ```{r}
-
 data = data %>% mutate(digitsTitle = str_detect(data$title, "[0-9]"))
 data = data %>% mutate(tlLength = str_length(data$tagline))
 ```

@@ -4,6 +4,7 @@ library(XML)
 library(rjson)
 library(stringr)
 library(tm)
+
 # Это функция, которая взять данные о главных актерах/актрисях из сайта metacritic (https://www.metacritic.com/movie/batman-begins/details). Input: Название фиьлма, Output: главные актеры
 
 # Внимание: не попробуйте эту функцию для длинного вектора названия фиьлмы. Потому что функция медленно работает (примерно 3 секунды за фильм), если длина вектор названия = 500, то время будет ~ 1500s ... Когда получится main_cast надо сохранить датафраме сразу (write.csv)
@@ -41,7 +42,7 @@ get_cast = function(title) {
     }
 }
 
-get_cast("Charly")
+get_cast("robin hood")
 ```
 
 ```{r}
@@ -49,6 +50,8 @@ clear_punc = function(text) {
   text = str_remove(text, '\\[')
   text = str_remove(text, '\\]')
   text = str_remove_all(text, "\"")
+  text = str_replace_all(text, " ", "-")
+  text = str_replace_all(text, ",", " ")
   return(text)
 }
 

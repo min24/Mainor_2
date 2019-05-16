@@ -46,8 +46,8 @@ data_cast = read_csv("data_cast.csv")
 movies2 = movies2 %>% left_join(data_cast, by = "title")
 ```
 ```{r}
-movies2 = movies2 %>% dplyr::select(-X1)
-write.csv(movies2, "movies2.csv")
+# movies2 = movies2 %>% dplyr::select(-X1)
+# write.csv(movies2, "movies2.csv")
 ```
 ```{r}
 
