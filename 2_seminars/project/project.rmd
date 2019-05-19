@@ -25,26 +25,19 @@ ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
 * актер/актрис (допонительно) (cast)
 
 ```{r}
-ratings=ratings %>% group_by(movie_id, movie_year) %>% summarise(rating = mean(rating,na.rm = T))
-movies = left_join(movies, ratings, by = "movie_id")
+
 ```
 
 Оставляем только нужные переменные в датасете
 
 
 ```{r}
-library(stringr)
-library(lubridate)
 
 
-movies2 = movies %>% dplyr::select(title, movie_id, rating, genres, popularity, runtime, movie_year, production_companies, production_countries, keywords)
 ```
 
 
-```{r}
-data_cast = read_csv("data_cast.csv")
-movies2 = movies2 %>% left_join(data_cast, by = "title")
-```
+
 ```{r}
 # movies2 = movies2 %>% dplyr::select(-X1)
 # write.csv(movies2, "movies2.csv")
@@ -58,4 +51,7 @@ data_with_keyword = spread(data, key = keywords_sep, value = keywords_v)
 ```
 
 
+
+```{r}
+```
 

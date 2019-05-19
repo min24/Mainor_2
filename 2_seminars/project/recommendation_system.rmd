@@ -1,21 +1,104 @@
-```{r}
-library(readr)
-```
-
 
 ```{r}
-movies2 = read_csv("movies2.csv")
+library(RCurl)
+library(XML)
+library(rjson)
+library(stringr)
+library(tm)
+
+# Это функция, которая взять данные о главных актерах/актрисях из сайта metacritic (https://www.metacritic.com/movie/batman-begins/details). Input: Название фиьлма, Output: главные актеры
+
+# Внимание: не попробуйте эту функцию для длинного вектора названия фиьлмы. Потому что функция медленно работает (примерно 3 секунды за фильм), если длина вектор названия = 500, то время будет ~ 1500s ... Когда получится main_cast надо сохранить датафраме сразу (write.csv)
+
+get_cast = function(title) {
+  title = removePunctuation(title)
+  title = stringr::str_to_lower(title)
+  title = stringr::str_split(title, " ")[[1]]
+  title = stringr::str_c(title, collapse = "-")
+  link = stringr::str_c("https://www.metacritic.com/movie", title, "details", sep = "/")
+  # link = "https://www.metacritic.com/movie/batman-begins/details"
+  webpage <- RCurl::getURL(link)
+  if (webpage == "") { return(NA)}
+  else {
+    webpage <- readLines(tc <- textConnection(webpage)); close(tc)
+    pagetree <- XML::htmlTreeParse(webpage, error=function(...){}, useInternalNodes = TRUE)
+    # parse the tree by tables
+    x <- xpathSApply(pagetree, "//*/table", xmlValue)
+    
+    if (length(x)==0) {return(NA)}
+    else{
+    # do some clean up with regular expressions
+    x <- unlist(strsplit(x, "\n"))
+    x <- gsub("\t","",x)
+    x <- sub("^[[:space:]]*(.*?)[[:space:]]*$", "\\1", x, perl=TRUE)
+    x <- x[!(x %in% c("", "|"))]
+    m = match(c("Principal Cast", "Cast"), x)
+    if (is.na(m[1]) | is.na(m[2])) {return(NA)}
+    else{
+    y = x[(m[1]+2):(m[2]-1)]
+    y = y[seq(1, length(y), by = 2)]
+    z = rjson::toJSON(y)
+    return(z)}
+    }
+    }
+}
+
+get_cast("robin hood")
 ```
+
 ```{r}
 clear_punc = function(text) {
   text = str_remove(text, '\\[')
   text = str_remove(text, '\\]')
   text = str_remove_all(text, "\"")
-  text = str_replace_all(text, " ", "_")
+  text = str_replace_all(text, " ", "-")
   text = str_replace_all(text, ",", " ")
   return(text)
 }
+
+text = '["Ralph Fiennes","Sean Connery","Uma Thurman"]'
+clear_punc(text)
 ```
+```{r}
+
+main_cast = Map(get_cast, movies$title) # это не ошибка, просто он медленно работает, примерно 30 минут. Поэто му я сохранил результат в датасет data_cast.csv чтобы не нужно повторить эту функцию.
+save = main_cast
+```
+
+```{r}
+values = unlist(main_cast, use.names = F)
+data_cast = data.frame(title = names(main_cast), cast = values)
+data_cast$cast = as.character(data_cast$cast)
+data_cast$title = as.character(data_cast$title)
+typeof(data_cast)
+write.csv(data_cast, "data_cast.csv")
+#=========================================================================================>
+```
+
+
+```{r}
+movies <- read_csv("~/shared/minor2_2018/data/movies_cut.csv")
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
+ratings=ratings %>% group_by(movie_id, movie_year) %>% summarise(rating = mean(rating,na.rm = T))
+movies = left_join(movies, ratings, by = "movie_id")
+
+data_cast = read_csv("data_cast.csv")
+movies2 = movies2 %>% left_join(data_cast, by = "title")
+movies2 = movies %>% dplyr::select(title, movie_id, rating, genres, popularity, runtime, movie_year, production_companies, production_countries, keywords)
+write.csv(movies2, "movies2.csv")
+
+#===========================================================================================>
+```
+
+
+```{r}
+library(readr)
+```
+
+```{r}
+movies2 = read_csv("movies2.csv")
+```
+
 
 ```{r}
 movies2$cast = clear_punc(movies2$cast)
@@ -28,8 +111,8 @@ tbl = table(data_$title, data_$principal_cast)
 ```
 
 ```{r}
-movies2$Var1 = movies2$title
 connect = function (tbl, movies2) {
+  movies2$Var1 = movies2$title
   tbl = as.data.frame(tbl)
   tbl = spread(tbl, key = Var2, value = Freq)
   movies2 = movies2 %>% dplyr::left_join(tbl, key = "Var1")
@@ -46,22 +129,28 @@ data_movie = movies2
 tbl1 = extract_json2(df = movies2, col = "genres")
 tbl1 = table(tbl1$Var1, tbl1$genres_sep)
 genre = connect(tbl1, movies2)
+write.csv(genre, "genre.csv")
+
 
 
 tbl2 = extract_json2(df = movies2, col = "production_companies")
 tbl2 = table(tbl2$Var1, tbl2$production_companies_sep)
 company = connect(tbl2, movies2)
+write.csv(company, "company.csv")
+
 
 tbl3 = extract_json2(df = movies2, col = "production_countries")
 tbl3 = table(tbl3$Var1, tbl3$production_countries_sep)
 country = connect(tbl3, movies2)
+write.csv(country, "country.csv")
+
 
 data_movie = connect(tbl1, movies2)
 data_movie = connect(tbl2, data_movie)
 data_movie = connect(tbl3, data_movie)
 data_movie = connect(tbl, data_movie)
 data_movie = distinct(data_movie)
-write.csv(company, "company.csv")
+write.csv(data_movie, "data_movie.csv")
 ```
 
 ```{r}
@@ -88,15 +177,7 @@ mostSimilar
 ```
 
 ```{r}
-userId = 968796
-ratings = read_csv("ratings_cut.csv")
-user = ratings %>% filter(customer_id == userId & rating == 5)
-
-mostSimilar = head(sort(sim[,as.character(user$movie_id)], decreasing = T), n = 5)
-a = which(sim[,as.character(user$movie_id)] %in% mostSimilar, arr.ind = TRUE)
-
-mostSimilar
-head(sort(sim[,"886"], decreasing = T), n = 5)
+ratings = read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
 ```
 
 
