@@ -1,0 +1,174 @@
+---
+title: "Recommendation evaluation"
+output: html_document
+---
+
+Несколько слов про оценку рекомендации и сравнение моделей.
+
+Сначала повторим все действия для построения модели
+
+```{r message = FALSE}
+library(jsonlite)
+library(tidyverse)
+library(recommenderlab)
+library(readr)
+```
+
+Чтение данных 
+
+```{r}
+movies <- read_csv("~/shared/minor2_2018/data/movies_cut.csv")[-1]
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")[-1]
+
+ratings$customer_id %>% unique() %>% length()
+```
+
+Сохраним только оценки пользователей и фильмы
+
+```{r}
+rates = select(ratings, customer_id, movie_id, rating)
+```
+
+Преобразуем к таблице в "широком" формате
+
+```{r}
+rates = spread(rates, key = movie_id, value = rating)
+```
+
+Оставляем только оценки, поэтому переведем пользователей в имена строк. Преобразуем к нужному формату и уберем фильмы и пользователей с небольшим числом оценок
+
+```{r}
+rownames(rates) = rates$customer_id
+rates = select(rates, -customer_id)
+rates = as.matrix(rates)
+r = as(rates, "realRatingMatrix")
+ratings_movies <- r[rowCounts(r) > 20, colCounts(r) > 15] 
+```
+
+Строим модель и предсказание. До этого мы делили на тестовую и обучающую выборки сами. Пакет `recommenderlab` предлагает нам "схемы", которые сделают тоже самое. 
+
+При этом мы можем указать, какие оценки нас устраивают, т.е. в каком случае мы действительно хотим рекомендовать что-то пользователю. Рассмотрим вариант, когда подходят 4 и 5 (параметр goodRating). 
+Параметр given показывает, сколько оценок пользователя мы будем использовать для сравнения (т.е. у всех пользователей должно быть не меньше given оцененных фильмов -- нам нужны реальные оценки)
+
+```{r}
+set.seed(100)
+eval_sets <- evaluationScheme(data = ratings_movies, 
+                              method = "split",
+                              train = 0.8, # доля обучающей выборки
+                              given = 15, # сколько оценок используется для  предсказания
+                              goodRating = 4) # если предсказанная оценка < 4, то фильм не рекомендуем
+```
+
+Можем посмотреть как устроена наша обучающая выборка.
+
+```{r}
+getData(eval_sets, "train")
+```
+Можно посмотреть сколько оценок мы спрятали от нашей рекомендательной системы.
+
+```{r}
+qplot(rowCounts(getData(eval_sets, "unknown"))) + geom_histogram(binwidth = 1) +  ylab("Количество пользователей")  + xlab("Количество оценок на одного пользователя")
+```
+
+Распределение для "неспрятанных" оценок.
+
+```{r}
+qplot(rowCounts(getData(eval_sets, "known"))) + geom_histogram(binwidth = 1) + ylab("Количество пользователей") + xlab("Количество оценок на одного пользователя")
+```
+Какой-то странный график... На самом деле, все правильно -- он показывает, что для каждого пользователя мы выбрали 15 оценок (фильмов)
+
+```{r}
+table(rowCounts(getData(eval_sets, "known")))
+```
+
+Строим модель на обучающей, предсказываем на тестовой
+
+```{r}
+
+recc_model <- Recommender(data = getData(eval_sets, "train"), method = "IBCF")
+recc_predicted <- predict(object = recc_model, newdata = getData(eval_sets, "known"), n = 6, type = "ratings")
+```
+
+Мы сделали предсказание, давайте посмотрим на его качество. Качество = отклонение предсказания от реальности. 
+
+```{r}
+eval_accuracy <- calcPredictionAccuracy(x = recc_predicted,
+                                        # predicted values
+                                        data = getData(eval_sets, "unknown"),
+                                        byUser = T) # averaging for each user
+head(eval_accuracy)
+
+eval_accuracy2 <- calcPredictionAccuracy(x = recc_predicted,
+                                         # predicted values
+                                         data = getData(eval_sets, "unknown"),
+                                         byUser = F) # not averaging for each user
+eval_accuracy2
+```
+
+Мы получили какие-то оценки. Хорошие они или плохие? Мы можем сравнивать таким образом модели. Предположим, что для другой модели мы получили показатели RMSE = 1.2911565, MSE = 1.6670851, MAE = 0.9561163. Какая модель лучше?
+
+**Ваша очередь:** 
+
+1. Постройте оценки методом UBSF. Сравните результаты
+
+2. Поменяйте параметр given. Что-то изменилось? Что, если у пользователя просто нет такого чмсла фильмов.
+
+### Общий принцип
+
+Мы рассмотрели, как оценка реализована в пакете recommenderlab. В нем учитываются пропуски в оценках, число используемых оценок и т.д., но работает он только на результатах рекомендации по моделям, реализованным в этом пакете. Сейчас же посмотрим общий принцип оценки.
+
+Рекомендации для пользователя 31510
+```{r}
+recc_model <- Recommender(data = ratings_movies, method = "IBCF")
+recc_predicted <- predict(object = recc_model, newdata = ratings_movies, n = 5)
+recc_user_1 <- recc_predicted@items[["31510"]]
+movies_user_1 <- recc_predicted@itemLabels[recc_user_1]
+names_movies_user_1 <- ratings$title[match(movies_user_1, ratings$movie_id)]
+names_movies_user_1
+recc_predicted@ratings[["31510"]]
+```
+Проверим, есть ли у этого пользователя реальные оценки этих фильмов
+
+```{r}
+filter(ratings, customer_id == 31510 & movie_id %in% as.numeric(movies_user_1))
+```
+
+Реальных оценок нет. Именно поэтому при оценке в пакете recommenderlab сначала отбираются те фильмы, на которые у пользователя есть оценка. Но как же тогда понять, подошла наша оценка или нет?
+
+* для проверки используем только те фильмы, для которых есть правильные ответы
+* опросы о качестве рекомендации ("понравилось ли вам") / действия (посмотрел/не посмотрел, купил/не купил)
+* сверка по внешним параметрам
+
+    * жанры (если есть)
+    * принадлежность к какому-то классу
+  
+Возьмем пользовательский топ-5 фильмов с имеющимися оценками. Но сначала преобразуем жанры  
+```{r message=F, warning=FALSE}
+source("/principal/courses/minor2_2018/2-tm-net/extract_json.R")
+source("~/shared/minor2_2018/2-tm-net/extract_json.R")
+movies = extract_json2(df = movies, col = "genres")
+
+top5 = filter(ratings, customer_id == 31510) %>% 
+  top_n(5, rating) %>% inner_join(movies, by = "movie_id")
+
+select(top5, genres_sep, movie_id)
+```
+
+А теперь посмотрим на жанры предсказания
+
+```{r}
+pred5 = movies %>% filter(movie_id %in% movies_user_1)
+
+select(pred5,genres_sep, movie_id)
+```
+
+* какие выводы можно сделать?
+
+Вопросы для размышления:
+* можно ли посчитать какой-то численный показатель по пользователю?
+* как обобщить на нескольких пользователей?
+* как это можно применить для content-based рекомендации?
+* как сравнить результаты content-based и коллаборативной фильтрации?
+
+
+
