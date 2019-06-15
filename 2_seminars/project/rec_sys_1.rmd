@@ -1,0 +1,113 @@
+```{r}
+library(readr)
+```
+
+
+```{r}
+movies2 = read_csv("movies2.csv")
+```
+```{r}
+clear_punc = function(text) {
+  text = str_remove(text, '\\[')
+  text = str_remove(text, '\\]')
+  text = str_remove_all(text, "\"")
+  text = str_replace_all(text, " ", "_")
+  text = str_replace_all(text, ",", " ")
+  return(text)
+}
+```
+
+```{r}
+movies2$cast = clear_punc(movies2$cast)
+```
+
+```{r}
+data_ = movies2 %>% tidytext::unnest_tokens(principal_cast, cast)
+tbl = table(data_$title, data_$principal_cast)
+
+```
+
+```{r}
+movies2$Var1 = movies2$title
+connect = function (tbl, movies2) {
+  tbl = as.data.frame(tbl)
+  tbl = spread(tbl, key = Var2, value = Freq)
+  movies2 = movies2 %>% dplyr::left_join(tbl, key = "Var1")
+  return(movies2)
+}
+# movies2 = connect(tbl3)
+```
+
+
+```{r}
+library(tidyr)
+source("~/shared/minor2_2018/2-tm-net/extract_json.R") 
+movies_tbl = movies2 %>% select(X1, genres)
+data_movie = movies2
+tbl1 = extract_json2(df = movies2, col = "genres")
+tbl1 = table(tbl1$Var1, tbl1$genres_sep)
+
+
+tbl2 = extract_json2(df = movies2, col = "production_companies")
+tbl2 = table(tbl2$Var1, tbl2$production_companies_sep)
+
+tbl3 = extract_json2(df = movies2, col = "production_countries")
+tbl3 = table(tbl3$Var1, tbl3$production_countries_sep)
+
+data_movie = connect(tbl1, movies2)
+data_movie = connect(tbl2, data_movie)
+data_movie = connect(tbl3, data_movie)
+data_movie = connect(tbl, data_movie)
+data_movie = distinct(data_movie)
+```
+
+```{r}
+data_movie = data_movie %>% dplyr::select(-X1, -rating, -runtime, -production_countries, -Var1, -title, -genres, -movie_year, -keywords, -popularity, -production_companies, -cast, -director)
+```
+```{r}
+names(movies2)
+```
+```{r}
+data_movie = distinct(data_movie)
+rownames(data_movie) = data_movie$movie_id
+data_movie = data_movie %>% select(-movie_id)
+sim = lsa::cosine(t(as.matrix(data_movie)))
+
+```
+
+```{r}
+diag(sim) = 0
+```
+
+```{r}
+# Function get films for user
+getFilms1 = function(userId, nfilm = 5){
+  user = ratings %>% filter(customer_id == userId & rating == 5)
+  
+  if (nrow(user)==0) {
+    recommend = "The Lord of The Ring"
+  } else {
+    mostSimilar = head(sort(sim[,as.character(user$movie_id)], decreasing = T), n = nfilm)
+    a = which(sim[,as.character(user$movie_id)] %in% mostSimilar, arr.ind = TRUE)
+    rows = a %% dim(sim)[1]
+    result = rownames(sim)[rows]
+    recommend = filter(movies2,movie_id %in% result) %>% dplyr::select(title)
+  }
+  
+  recommend
+}
+getFilms1(139122, n = 6)
+```
+
+```{r}
+check = ratings %>%select(customer_id, rating, title) %>%filter(rating >= 4) %>%   filter(customer_id == 139122) %>% arrange(-rating)
+```
+
+```{r}
+rec1 = getFilms1(1904916, n = 5)
+rec2 = getFilms2(1904916, n = 5)
+rec3 = getFilms3(1904916, n = 5)
+
+```
+```{r}
+

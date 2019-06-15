@@ -1,0 +1,94 @@
+---
+title: "colfiltr"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+movies <- read_csv("movies2.csv")
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
+ratings = ratings %>% dplyr::select(-X1)
+
+rates = select(ratings, customer_id, movie_id, rating)
+```
+
+Преобразуем к таблице в "широком" формате
+```{r}
+library(tidyr)
+rates = spread(rates, key = movie_id, value = rating)
+```
+
+Переведем сначала пользователей в имена строк 
+```{r}
+rownames(rates) = rates$customer_id
+rates = select(rates, -customer_id)
+library(recommenderlab)
+```
+
+```{r}
+rates = as.matrix(rates)
+r = as(rates, "realRatingMatrix")
+r
+```
+
+Отберем только строки и столбцы с нужным количеством оценок
+```{r}
+ratings_movies <- r[rowCounts(r) > 5, colCounts(r) > 10] 
+ratings_movies
+```
+```{r}
+set.seed(100)
+test_ind <- sample(1:nrow(ratings_movies), size = nrow(ratings_movies)*0.2)
+recc_data_train <- ratings_movies[-test_ind, ]
+recc_data_test <- ratings_movies[test_ind, ]
+
+recc_model <- Recommender(data = recc_data_train, method = "UBCF", parameter = list(k = 30))
+recc_model
+```
+Рекомендации для __-ого пользователя
+```{r}
+recc_predicted <- predict(object = recc_model, newdata = recc_data_test, n = 6)
+recc_user_1 <- recc_predicted@items[[50]]
+recc_user_1
+
+```
+
+Это номер строк в матрице, вытащим id фильмов
+```{r}
+movies_user_1 <- recc_predicted@itemLabels[recc_user_1]
+movies_user_1
+
+#вытащим названия
+names_movies_user_1 <- ratings$title[match(movies_user_1, ratings$movie_id)]
+names_movies_user_1
+```
+
+
+
+
+```{r}
+ratings %>% filter(customer_id == 846023)
+```
+
+
+```{r}
+conlfiltrUSER = function()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

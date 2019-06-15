@@ -26,18 +26,21 @@ ratings$customer_id %>% unique() %>% length()
 Сохраним только оценки пользователей и фильмы
 
 ```{r}
+
 rates = select(ratings, customer_id, movie_id, rating)
 ```
 
 Преобразуем к таблице в "широком" формате
 
 ```{r}
+
 rates = spread(rates, key = movie_id, value = rating)
 ```
 
 Оставляем только оценки, поэтому переведем пользователей в имена строк. Преобразуем к нужному формату и уберем фильмы и пользователей с небольшим числом оценок
 
 ```{r}
+
 rownames(rates) = rates$customer_id
 rates = select(rates, -customer_id)
 rates = as.matrix(rates)
@@ -51,6 +54,19 @@ ratings_movies <- r[rowCounts(r) > 20, colCounts(r) > 15]
 Параметр given показывает, сколько оценок пользователя мы будем использовать для сравнения (т.е. у всех пользователей должно быть не меньше given оцененных фильмов -- нам нужны реальные оценки)
 
 ```{r}
+movies <- read_csv("~/shared/minor2_2018/data/movies_cut.csv")[-1]
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")[-1]
+
+ratings$customer_id %>% unique() %>% length()
+rates = select(ratings, customer_id, movie_id, rating)
+rates = spread(rates, key = movie_id, value = rating)
+
+rownames(rates) = rates$customer_id
+rates = select(rates, -customer_id)
+rates = as.matrix(rates)
+r = as(rates, "realRatingMatrix")
+ratings_movies <- r[rowCounts(r) > 20, colCounts(r) > 15]
+
 set.seed(100)
 eval_sets <- evaluationScheme(data = ratings_movies, 
                               method = "split",
@@ -62,28 +78,33 @@ eval_sets <- evaluationScheme(data = ratings_movies,
 Можем посмотреть как устроена наша обучающая выборка.
 
 ```{r}
+
 getData(eval_sets, "train")
 ```
 Можно посмотреть сколько оценок мы спрятали от нашей рекомендательной системы.
 
 ```{r}
+
 qplot(rowCounts(getData(eval_sets, "unknown"))) + geom_histogram(binwidth = 1) +  ylab("Количество пользователей")  + xlab("Количество оценок на одного пользователя")
 ```
 
 Распределение для "неспрятанных" оценок.
 
 ```{r}
+
 qplot(rowCounts(getData(eval_sets, "known"))) + geom_histogram(binwidth = 1) + ylab("Количество пользователей") + xlab("Количество оценок на одного пользователя")
 ```
 Какой-то странный график... На самом деле, все правильно -- он показывает, что для каждого пользователя мы выбрали 15 оценок (фильмов)
 
 ```{r}
+
 table(rowCounts(getData(eval_sets, "known")))
 ```
 
 Строим модель на обучающей, предсказываем на тестовой
 
 ```{r}
+
 
 recc_model <- Recommender(data = getData(eval_sets, "train"), method = "IBCF")
 recc_predicted <- predict(object = recc_model, newdata = getData(eval_sets, "known"), n = 6, type = "ratings")
@@ -92,6 +113,56 @@ recc_predicted <- predict(object = recc_model, newdata = getData(eval_sets, "kno
 Мы сделали предсказание, давайте посмотрим на его качество. Качество = отклонение предсказания от реальности. 
 
 ```{r}
+
+eval_accuracy <- calcPredictionAccuracy(x = recc_predicted,
+                                        # predicted values
+                                        data = getData(eval_sets, "unknown"),
+                                        byUser = T) # averaging for each user
+head(eval_accuracy)
+
+eval_accuracy2 <- calcPredictionAccuracy(x = recc_predicted,
+                                         # predicted values
+                                         data = getData(eval_sets, "unknown"),
+                                         byUser = F) # not averaging for each user
+eval_accuracy2
+# MSE = mean squared error = 1/n.sum((pred - real)^2)
+# RMSE = Root (корень) MSE
+# MAE = mean absolute error = 1/n.sum(abs(pred - real))
+```
+
+Мы получили какие-то оценки. Хорошие они или плохие? Мы можем сравнивать таким образом модели. Предположим, что для другой модели мы получили показатели RMSE = 1.2911565, MSE = 1.6670851, MAE = 0.9561163. Какая модель лучше?
+
+**Ваша очередь:** 
+
+1. Постройте оценки методом UBCF. Сравните результаты
+
+```{r}
+movies <- read_csv("~/shared/minor2_2018/data/movies_cut.csv")[-1]
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")[-1]
+
+ratings$customer_id %>% unique() %>% length()
+rates = select(ratings, customer_id, movie_id, rating)
+rates = spread(rates, key = movie_id, value = rating)
+
+rownames(rates) = rates$customer_id
+rates = select(rates, -customer_id)
+rates = as.matrix(rates)
+r = as(rates, "realRatingMatrix")
+ratings_movies <- r[rowCounts(r) > 20, colCounts(r) > 15]
+
+set.seed(100)
+eval_sets <- evaluationScheme(data = ratings_movies, 
+                              method = "split",
+                              train = 0.8, # доля обучающей выборки
+                              given = 15, # сколько оценок используется для  предсказания
+                              goodRating = 4) # если предсказанная оценка < 4, то фильм не рекомендуем
+getData(eval_sets, "train")
+qplot(rowCounts(getData(eval_sets, "unknown"))) + geom_histogram(binwidth = 1) +  ylab("Количество пользователей")  + xlab("Количество оценок на одного пользователя")
+qplot(rowCounts(getData(eval_sets, "known"))) + geom_histogram(binwidth = 1) + ylab("Количество пользователей") + xlab("Количество оценок на одного пользователя")
+table(rowCounts(getData(eval_sets, "known")))
+
+recc_model <- Recommender(data = getData(eval_sets, "train"), method = "UBCF")
+recc_predicted <- predict(object = recc_model, newdata = getData(eval_sets, "known"), n = 6, type = "ratings")
 eval_accuracy <- calcPredictionAccuracy(x = recc_predicted,
                                         # predicted values
                                         data = getData(eval_sets, "unknown"),
@@ -105,11 +176,6 @@ eval_accuracy2 <- calcPredictionAccuracy(x = recc_predicted,
 eval_accuracy2
 ```
 
-Мы получили какие-то оценки. Хорошие они или плохие? Мы можем сравнивать таким образом модели. Предположим, что для другой модели мы получили показатели RMSE = 1.2911565, MSE = 1.6670851, MAE = 0.9561163. Какая модель лучше?
-
-**Ваша очередь:** 
-
-1. Постройте оценки методом UBSF. Сравните результаты
 
 2. Поменяйте параметр given. Что-то изменилось? Что, если у пользователя просто нет такого чмсла фильмов.
 

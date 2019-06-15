@@ -1,0 +1,33 @@
+
+```{r}
+movies2 = read_csv("movies2.csv")
+
+movies2$director = clear_punc(movies2$director)
+
+movies2$cast = clear_punc(movies2$cast)
+```
+```{r}
+data = movies2
+```
+```{r}
+data = data %>% tidytext::unnest_tokens(director, director)
+data = data %>% tidytext::unnest_tokens(cast, cast)
+
+```
+
+```{r}
+data %>% group_by(title, cast) %>% summarise(n = n()) %>% arrange(-n) %>% head(10) %>% ggplot()+ geom_bar(aes(x = cast, y = n), stat = "identity")
+```
+
+```{r}
+movies2 = read_csv("movies2.csv")
+
+data_genre = extract_json2(df = movies2, col = "genres")
+data_genre %>% group_by(genres_sep) %>% summarise(n = n()) %>% ggplot()+geom_bar(aes(x = genres_sep, y = n), stat = "identity", colour = "blue", fill = "red")+
+  theme(axis.text.x = element_text(angle = 30))+
+  xlab("Жанр")+
+  ylab("Частота")+
+  ggtitle("Распределение фильмов по жанру")
+```
+
+

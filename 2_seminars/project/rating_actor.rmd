@@ -1,0 +1,48 @@
+
+
+```{r}
+library(RCurl)
+library(XML)
+library(rjson)
+library(stringr)
+library(tm)
+
+# Это функция, которая взять данные о главных актерах/актрисях из сайта metacritic (https://www.metacritic.com/movie/batman-begins/details). Input: Название фиьлма, Output: главные актеры
+
+# Внимание: не попробуйте эту функцию для длинного вектора названия фиьлмы. Потому что функция медленно работает (примерно 3 секунды за фильм), если длина вектор названия = 500, то время будет ~ 1500s ... Когда получится main_cast надо сохранить датафраме сразу (write.csv)
+
+get_director = function(cast) {
+  cast = "christian bale"
+  cast = removePunctuation(cast)
+  cast = stringr::str_to_lower(cast)
+  cast = stringr::str_split(cast, " ")[[1]]
+  cast = stringr::str_c(cast, collapse = "-")
+  link = stringr::str_c("https://www.metacritic.com/person", cast, "?filter-options=movies", sep = "/")
+  # link = "https://www.metacritic.com/person/christian-bale?filter-options=movies"
+  webpage <- RCurl::getURL(link)
+  if (webpage == "") { return(NA)}
+  else {
+    webpage <- readLines(tc <- textConnection(webpage)); close(tc)
+    pagetree <- XML::htmlTreeParse(webpage, error=function(...){}, useInternalNodes = TRUE)
+    # parse the tree by tables
+    x <- xpathSApply(pagetree, "//*/table", xmlValue)
+    if (length(x)==0) {return(NA)}
+    else{
+    # do some clean up with regular expressions
+    x <- unlist(strsplit(x, "\n"))
+    x <- gsub("\t","",x)
+    x <- sub("^[[:space:]]*(.*?)[[:space:]]*$", "\\1", x, perl=TRUE)
+    x <- x[!(x %in% c("", "|"))]
+    m = match(c("Director", "Writer"), x)
+    if (is.na(m[1]) | is.na(m[2])) {return(NA)}
+    else{
+    y = x[(m[1]+2):(m[2]-1)]
+    y = y[seq(1, length(y), by = 2)]
+    z = rjson::toJSON(y)
+    return(z)}
+    }
+    }
+}
+
+get_director("The Love Letter")
+```

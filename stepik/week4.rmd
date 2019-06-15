@@ -3,58 +3,50 @@
 ```{r}
 library(tidyverse) 
 library(tidytext) 
+media = read_csv("~/shared/minor2_2018/2-tm-net/lab03-tm/media.csv") 
+
 ```
 
 ```{r}
-media = read_csv("C:/Users/Duy/Desktop/Mainor_2/2_seminars/lab03-tm/media.csv") 
-rustopwords <- data.frame(words=stopwords::stopwords("ru"), stringsAsFactors=FALSE) #загрузит словарь со стоп-словами
-<<<<<<< HEAD
-media_words = media %>% tidytext::unnest_tokens(words, text) %>% anti_join(rustopwords)
-=======
-media_words = media %>% tidytext::unnest_tokens(words, text) %>% anti_join(rustopwords) %>% na.omit()
->>>>>>> 3bf901bca42b85a6a13c1e84a543630194353da3
-
-media_words = media_words %>% filter(!str_detect(words, "[[:digit:]]"))
-media_words = media_words %>% filter(words != "br")
+media$text = str_replace_all(media$text, "[[:digit:]]", "")
+media_words = media %>% tidytext::unnest_tokens(words, text)
+ 
+rustopwords <- data.frame(words=stopwords::stopwords("ru"), stringsAsFactors=FALSE)
+media_words = media_words %>% anti_join(rustopwords)
 
 media_words_count = media_words %>% dplyr::count(words) %>% filter(n > 2 & n < quantile(n, 0.99))
-
-
 median(media_words_count$n)
+```
+```{r}
+long_text = media_words %>% group_by(media) %>% summarise(n = n())
+long_text = long_text %>% filter(n >= 6)
 
-median_words_id = media_words %>% dplyr::count(media) %>% filter(n >= 6)
-media_words = media_words %>% filter(media %in% median_words_id$media)
-media_words = media_words %>% dplyr::count(media, words)
+long_media = media_words %>% filter(media %in% long_text$media) %>% filter(words != "br")
 
-media_tf_tdf = media_words %>% bind_tf_idf(words, media, n) %>% arrange(-tf_idf)
+long_media = long_media %>% dplyr::count(media, words)
 
+media_tf_tdf = long_media %>% bind_tf_idf(words, media, n) %>% arrange(-tf_idf)
+media_tf_tdf = media_tf_tdf %>% group_by(words) %>% summarise(tf_idf = mean(tf_idf)) %>% arrange(-tf_idf)
+```
 
-media_tf_tdf %>% arrange(media, -tf_idf)
-max(media_tf_tdf$media)
-min(media_tf_tdf$media)
+```{r}
+c = c(
+ "суток",
+ "побои",
+ "шоу",
+ "фбк",
+ "иностранным",
+ "харбин")
 
-media = media_tf_tdf %>% dplyr::count(media)
-c = c()
-
-for (i in media$media) {
-  m = media_tf_tdf %>% filter(media==i) %>% arrange(-tf_idf) %>% head(1)
-  c = append(c, m$words)
-}
-
-"побои" %in% c
-
-"иностранным" %in% c
-
-"шоу" %in% c
-"фбк" %in% c
-"суток" %in% c
-"харбин" %in% c
+media_tf_tdf = media_tf_tdf %>% filter(words %in% c)
+media_tf_tdf %>% arrange(-tf_idf)
+```
 
 
-# media_words1 = media_words %>% dplyr::count(X1, words) %>% filter(words %in% media_words2$words)
-# 
-# 
-# media_words1 %>% bind_tf_idf(words, X1, n) %>% arrange(-tf_idf)
+```{r}
+
+
+
 
 ```
 
@@ -135,5 +127,22 @@ lsa::cosine(t(test_tdm))
 
 rbc_cosine = lsa::cosine(rbc_tdm %>% t())
 
+```
+
+
+
+```{r}
+rbc_vk = read_csv("~/shared/minor2_2018/data/rbc_vk.csv") 
+#в колонке lem мы записали тексты новостей уже в лемматизированной форме. приведите по этой колонке данные в длинный формат
+#удалите слова, встречающиеся меньше 15 или больше 30 раз
+#удалите тексты, в которых встречается 5 и меньше слов
+#посчитайте взвешенную частотность слов с bind_tf_idf() и создайте term-document matrix
+
+#многие фукнции могут требовать, чтобы на входе была именно матрица. для этого 
+
+rownames(rbc.tdm) =  rbc.tdm$id #присвоим строкам названия -- id постов в вк 
+
+rbc.tdm = rbc.tdm %>% select(-id)
+rbc.tdm = rbc.tdm %>% as.matrix()
 ```
 

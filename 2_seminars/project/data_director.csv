@@ -1,0 +1,508 @@
+"","title","director"
+"1","The Avengers","""Jeremiah S Chechik"""
+"2","Robin Hood","""Ridley Scott"""
+"3","Titanic","""James Cameron"""
+"4","The Great Gatsby","""Baz Luhrmann"""
+"5","A Christmas Carol","""Robert Zemeckis"""
+"6","Batman Begins","""Christopher Nolan"""
+"7","Armageddon","""Michael Bay"""
+"8","Men in Black II","""Barry Sonnenfeld"""
+"9","Fun with Dick and Jane","""Dean Parisot"""
+"10","The Last Samurai","""Edward Zwick"""
+"11","Final Fantasy: The Spirits Within","[""Hironobu Sakaguchi"",""Moto Sakakibara"",""Motonori Sakakibara""]"
+"12","Bad Boys II","""Michael Bay"""
+"13","Dinosaur","[""Eric Leighton"",""Ralph Zondag""]"
+"14","Pirates of the Caribbean: The Curse of the Black Pearl","""Gore Verbinski"""
+"15","Clash of the Titans","""Louis Leterrier"""
+"16","The Perfect Storm","""Wolfgang Petersen"""
+"17","Stuart Little 2","""Rob Minkoff"""
+"18","Speed Racer","[""Andy Wachowski"",""Lana Wachowski""]"
+"19","Dante's Peak","""Roger Donaldson"""
+"20","Fantastic Four","""Tim Story"""
+"21","Around the World in 80 Days","""Frank Coraci"""
+"22","Town & Country",NA
+"23","Planet of the Apes","""Tim Burton"""
+"24","The Hunchback of Notre Dame","[""Gary Trousdale"",""Kirk Wise""]"
+"25","The Emperor's New Groove","""Mark Dindal"""
+"26","End of Days","""Peter Hyams"""
+"27","Hercules","""Brett Ratner"""
+"28","The Spanish Prisoner","""David Mamet"""
+"29","Jurassic Park III","""Joe Johnston"""
+"30","The Alamo","""John Lee Hancock"""
+"31","Rush Hour 2","""Brett Ratner"""
+"32","Hollow Man","""Paul Verhoeven"""
+"33","The Saint","""Phillip Noyce"""
+"34","The Devil's Own","""Alan J. Pakula"""
+"35","Conan the Barbarian","""John Milius"""
+"36","The Bourne Supremacy","""Paul Greengrass"""
+"37","The Three Musketeers","""Paul W.S. Anderson"""
+"38","The Rundown","""Peter Berg"""
+"39","Collateral Damage","""Andrew Davis"""
+"40","Creepshow","""George A. Romero"""
+"41","Bruce Almighty","""Tom Shadyac"""
+"42","Charlotte's Web","""Gary Winick"""
+"43","The Longest Yard","""Peter Segal"""
+"44","Something's Gotta Give","""Nancy Meyers"""
+"45","Road to Perdition","""Sam Mendes"""
+"46","Fantasia 2000","[""Don Hahn"",""Eric Goldberg"",""Francis Glebas"",""Ga\u00ebtan Brizzi"",""Hendel Butoy"",""James Algar"",""Paul Brizzi"",""Pixote Hunt""]"
+"47","Little Nicky","""Steven Brill"""
+"48","Mars Attacks!",NA
+"49","Evolution","""Ivan Reitman"""
+"50","A Beautiful Mind","""Ron Howard"""
+"51","2 Fast 2 Furious","""John Singleton"""
+"52","50 First Dates","""Peter Segal"""
+"53","First Knight",NA
+"54","Hostage","""Florent Emilio Siri"""
+"55","Titan A.E.","[""Art Vitello"",""Don Bluth"",""Gary Goldman""]"
+"56","Monkeybone","""Henry Selick"""
+"57","Sphere","""Barry Levinson"""
+"58","Dr. Dolittle 2","""Steve Carr"""
+"59","Braveheart","""Mel Gibson"""
+"60","The Village","""M. Night Shyamalan"""
+"61","Signs","""M. Night Shyamalan"""
+"62","Shrek 2","[""Andrew Adamson"",""Conrad Vernon"",""Kelly Asbury""]"
+"63","Hook","""Steven Spielberg"""
+"64","S.W.A.T.","""Clark Johnson"""
+"65","Wolf","""Jim Taihuttu"""
+"66","I Spy","""Betty Thomas"""
+"67","Rollerball",NA
+"68","The Sum of All Fears",NA
+"69","Mystery Men",NA
+"70","What Women Want",NA
+"71","The Santa Clause 2",NA
+"72","Annie",NA
+"73","Blade: Trinity",NA
+"74","Hudson Hawk",NA
+"75","Random Hearts",NA
+"76","The American President",NA
+"77","The Italian Job",NA
+"78","The Family Man",NA
+"79","The Scorpion King",NA
+"80","Man on Fire",NA
+"81","Jingle All the Way",NA
+"82","Under Siege 2: Dark Territory",NA
+"83","The Sentinel",NA
+"84","Beyond Borders",NA
+"85","The Flintstones in Viva Rock Vegas",NA
+"86","Captain Corelli's Mandolin","""John Madden"""
+"87","The Pacifier","""Adam Shankman"""
+"88","Walking Tall","""Kevin Bray"""
+"89","Pocahontas","[""Eric Goldberg"",""Mike Gabriel""]"
+"90","American Wedding","""Jesse Dylan"""
+"91","Casper","""Brad Silberling"""
+"92","Disclosure","""Barry Levinson"""
+"93","Kill Bill: Vol. 2","""Quentin Tarantino"""
+"94","Death Becomes Her","""Robert Zemeckis"""
+"95","Shanghai Noon","""Tom Dey"""
+"96","The Ghost and the Darkness",NA
+"97","Chain Reaction",NA
+"98","The Fan","""Tony Scott"""
+"99","Turbulence",NA
+"100","Thunderbirds","""Jonathan Frakes"""
+"101","Domestic Disturbance","""Harold Becker"""
+"102","Beloved","""Jonathan Demme"""
+"103","Man on the Moon","""Milos Forman"""
+"104","Robin Hood: Prince of Thieves","""Kevin Reynolds"""
+"105","Patch Adams","""Tom Shadyac"""
+"106","Into the Woods",NA
+"107","Congo",NA
+"108","Don't Say a Word",NA
+"109","Absolute Power",NA
+"110","The Game",NA
+"111","Beverly Hills Cop III",NA
+"112","Gremlins 2: The New Batch",NA
+"113","The Story of Us",NA
+"114","The Life Aquatic with Steve Zissou",NA
+"115","Man of the House",NA
+"116","Jade",NA
+"117","Beautiful Creatures",NA
+"118","Death to Smoochy",NA
+"119","Rat Race","""Jerry Zucker"""
+"120","Bedazzled","""Harold Ramis"""
+"121","The Thomas Crown Affair","""John McTiernan"""
+"122","Solaris","""Steven Soderbergh"""
+"123","America's Sweethearts","""Joe Roth"""
+"124","Liar Liar","""Tom Shadyac"""
+"125","The Flintstones","""Brian Levant"""
+"126","Journey to the Center of the Earth","""Eric Brevig"""
+"127","Training Day","""Antoine Fuqua"""
+"128","Scary Movie 2","""Keenen Ivory Wayans"""
+"129","Coach Carter","""Thomas Carter"""
+"130","Love Actually","""Richard Curtis"""
+"131","From Hell","[""Albert Hughes"",""Allen Hughes""]"
+"132","Kicking & Screaming",NA
+"133","The Hitchhiker's Guide to the Galaxy","""Garth Jennings"""
+"134","The Pledge","""Sean Penn"""
+"135","All the Pretty Horses","""Billy Bob Thornton"""
+"136","Bangkok Dangerous","[""Danny Pang"",""Oxide Pang Chun""]"
+"137","Rambo: First Blood Part II","""George P. Cosmatos"""
+"138","Heaven's Gate","""Michael Cimino"""
+"139","Unleashed","""Louis Leterrier"""
+"140","Along Came Polly","""John Hamburg"""
+"141","The Mirror Has Two Faces",NA
+"142","The Mothman Prophecies","""Mark Pellington"""
+"143","The Sixth Sense","""M. Night Shyamalan"""
+"144","Scream 3","""Wes Craven"""
+"145","Back to the Future Part III","""Robert Zemeckis"""
+"146","Dracula","""Francis Ford Coppola"""
+"147","The Talented Mr. Ripley","""Anthony Minghella"""
+"148","Ray","""Taylor Hackford"""
+"149","Shall We Dance?","""Peter Chelsom"""
+"150","Pay It Forward","""Mimi Leder"""
+"151","Fever Pitch","[""Bobby Farrelly"",""Peter Farrelly""]"
+"152","The Shadow",NA
+"153","Sweet November","""Pat O'Connor"""
+"154","Life or Something Like It","""Stephen Herek"""
+"155","Impostor","""Gary Fleder"""
+"156","Just Visiting","""Jean-Marie Poir\u00e9"""
+"157","Sunshine","""Danny Boyle"""
+"158","The Gunman","""Pierre Morel"""
+"159","Hackers","""Iain Softley"""
+"160","The Last Shot","""Jeff Nathanson"""
+"161","Against the Ropes","""Charles S. Dutton"""
+"162","Spy Kids 2: The Island of Lost Dreams",NA
+"163","The Hurricane","""Norman Jewison"""
+"164","Extreme Measures",NA
+"165","White Squall","""Ridley Scott"""
+"166","The Master","""Paul Thomas Anderson"""
+"167","Reindeer Games","""John Frankenheimer"""
+"168","A Man Apart","""F. Gary Gray"""
+"169","Lethal Weapon 3","""Richard Donner"""
+"170","Spy Kids","""Robert Rodriguez"""
+"171","Star Trek: The Motion Picture","""Robert Wise"""
+"172","The English Patient","""Anthony Minghella"""
+"173","A Nightmare on Elm Street","""Samuel Bayer"""
+"174","Poltergeist","""Gil Kenan"""
+"175","The Ladykillers","[""Ethan Coen"",""Joel Coen""]"
+"176","The Bad News Bears","""Michael Ritchie"""
+"177","The Pianist","""Roman Polanski"""
+"178","Predator 2","""Stephen Hopkins"""
+"179","Wonder Boys","""Curtis Hanson"""
+"180","Hot Pursuit","""Anne Fletcher"""
+"181","The Four Feathers","""Shekhar Kapur"""
+"182","Krull","""Peter Yates"""
+"183","Radio Flyer",NA
+"184","Ride with the Devil","""Ang Lee"""
+"185","Exit Wounds","""Andrzej Bartkowiak"""
+"186","Elf","""Jon Favreau"""
+"187","Bringing Out the Dead","""Martin Scorsese"""
+"188","Cats Don't Dance",NA
+"189","Cradle Will Rock","""Tim Robbins"""
+"190","Arachnophobia","""Frank Marshall"""
+"191","Speed","""Jan de Bont"""
+"192","The Addams Family","""Barry Sonnenfeld"""
+"193","Ace Ventura: When Nature Calls","""Steve Oedekerk"""
+"194","The Prince of Tides","""Barbra Streisand"""
+"195","About Schmidt","""Alexander Payne"""
+"196","Message in a Bottle","""Luis Mandoki"""
+"197","Secondhand Lions","""Tim McCanlies"""
+"198","One True Thing",NA
+"199","The Replacement Killers",NA
+"200","Fright Night",NA
+"201","In Dreams",NA
+"202","Ripley's Game",NA
+"203","Cry Freedom",NA
+"204","Mumford",NA
+"205","Dawn of the Dead","""Zack Snyder"""
+"206","The Wedding Planner","""Adam Shankman"""
+"207","Identity","""James Mangold"""
+"208","For Your Eyes Only","""John Glen"""
+"209","Serendipity","""Peter Chelsom"""
+"210","Hocus Pocus",NA
+"211","Rob Roy","""Michael Caton-Jones"""
+"212","About a Boy","[""Chris Weitz"",""Paul Weitz""]"
+"213","Dark City","""Alex Proyas"""
+"214","Freaky Friday","""Mark Waters"""
+"215","Ever After: A Cinderella Story",NA
+"216","Flatliners","""Joel Schumacher"""
+"217","In Good Company","""Paul Weitz"""
+"218","Original Sin","""Michael Cristofer"""
+"219","Flipper","""Alan Shapiro"""
+"220","The Passion of the Christ","""Mel Gibson"""
+"221","Scooby-Doo 2: Monsters Unleashed",NA
+"222","Freddy vs. Jason","""Ronny Yu"""
+"223","Jimmy Neutron: Boy Genius","""John A. Davis"""
+"224","Bridget Jones's Diary","""Sharon Maguire"""
+"225","Chocolat",NA
+"226","The Omen",NA
+"227","Finding Neverland",NA
+"228","Nothing to Lose",NA
+"229","Beauty Shop","""Bille Woodruff"""
+"230","Elizabeth","""Shekhar Kapur"""
+"231","Bride of Chucky","""Ronny Yu"""
+"232","Spice World","""Bob Spiers"""
+"233","He Got Game","""Spike Lee"""
+"234","Half Past Dead","""Don Michael Paul"""
+"235","Bright Lights, Big City",NA
+"236","Stealing Harvard","""Bruce McCulloch"""
+"237","Michael Collins","""Neil Jordan"""
+"238","Abandon","""Stephen Gaghan"""
+"239","Tank Girl",NA
+"240","King's Ransom","""Jeffrey W. Byrd"""
+"241","I Still Know What You Did Last Summer","""Danny Cannon"""
+"242","Bad Boys","""Michael Bay"""
+"243","Joy Ride","""John Dahl"""
+"244","Marvin's Room","""Jerry Zaks"""
+"245","Ghost","""Jerry Zucker"""
+"246","The Santa Clause","""John Pasquin"""
+"247","The Rookie","""John Lee Hancock"""
+"248","Derailed",NA
+"249","RoboCop 3",NA
+"250","The Libertine",NA
+"251","Teenage Mutant Ninja Turtles III",NA
+"252","The Rage: Carrie 2",NA
+"253","Molly",NA
+"254","The Best Little Whorehouse in Texas",NA
+"255","Home Alone 2: Lost in New York",NA
+"256","The Silence of the Lambs",NA
+"257","Wayne's World",NA
+"258","Premonition",NA
+"259","Ghost Ship",NA
+"260","Wild Things",NA
+"261","High Fidelity",NA
+"262","Eternal Sunshine of the Spotless Mind",NA
+"263","Vampires",NA
+"264","Psycho","""Gus Van Sant"""
+"265","Pooh's Heffalump Movie","""Frank Nissen"""
+"266","A Guy Thing","""Chris Koch"""
+"267","Undisputed","""Walter Hill"""
+"268","Three to Tango","""Damon Santostefano"""
+"269","Superbabies: Baby Geniuses 2","""Bob Clark"""
+"270","Princess Mononoke","""Hayao Miyazaki"""
+"271","People I Know","""Daniel Algrant"""
+"272","Sea of Love","""Harold Becker"""
+"273","A Cinderella Story","""Mark Rosman"""
+"274","Scream","""Wes Craven"""
+"275","I Can Do Bad All By Myself","""Tyler Perry"""
+"276","Spirited Away","""Hayao Miyazaki"""
+"277","The Fall of the Roman Empire",NA
+"278","The Amityville Horror","""Andrew Douglas"""
+"279","Fear and Loathing in Las Vegas","""Terry Gilliam"""
+"280","Mean Girls","""Mark Waters"""
+"281","Honey","""Bille Woodruff"""
+"282","Fame","""Kevin Tancharoen"""
+"283","Small Time Crooks","""Woody Allen"""
+"284","Center Stage","""Nicholas Hytner"""
+"285","Life as a House","""Irwin Winkler"""
+"286","The Ice Storm","""Ang Lee"""
+"287","Ed Wood","""Tim Burton"""
+"288","Red Sonja","""Richard Fleischer"""
+"289","Hitman","""Xavier Gens"""
+"290","City of Ghosts","""Matt Dillon"""
+"291","The Others","""Alejandro Amen\u00e1bar"""
+"292","Sideways","""Alexander Payne"""
+"293","The Adventures of Elmo in Grouchland","""Gary Halvorson"""
+"294","Superman IV: The Quest for Peace","""Sidney J. Furie"""
+"295","Shanghai Surprise",NA
+"296","Sense and Sensibility","""Ang Lee"""
+"297","House of Sand and Fog","""Vadim Perelman"""
+"298","Double Impact",NA
+"299","The Women","""Diane English"""
+"300","Boys and Girls","""Robert Iscove"""
+"301","The Cookout","""Lance Rivera"""
+"302","Ararat","""Atom Egoyan"""
+"303","Beverly Hills Cop","""Martin Brest"""
+"304","American Beauty",NA
+"305","National Lampoon's Vacation",NA
+"306","The Deer Hunter",NA
+"307","The Faculty",NA
+"308","Not Another Teen Movie",NA
+"309","Halloween II",NA
+"310","The Last House on the Left",NA
+"311","Confessions of a Teenage Drama Queen",NA
+"312","Tuck Everlasting",NA
+"313","Disturbing Behavior",NA
+"314","Firestarter",NA
+"315","Freddy Got Fingered",NA
+"316","The Muse",NA
+"317","The Importance of Being Earnest","""Oliver Parker"""
+"318","The Love Letter",NA
+"319","The Clan of the Cave Bear",NA
+"320","Things to Do in Denver When You're Dead","""Gary Fleder"""
+"321","Buffalo Soldiers","""Gregor Jordan"""
+"322","The Return","""Asif Kapadia"""
+"323","Superstar","""Bruce McCulloch"""
+"324","Dead Man on Campus","""Alan Cohn"""
+"325","Crooklyn","""Spike Lee"""
+"326","The Caveman's Valentine","""Kasi Lemmons"""
+"327","10 Things I Hate About You","""Gil Junger"""
+"328","The Big Hit","""Kirk Wong"""
+"329","Being John Malkovich","""Spike Jonze"""
+"330","Two Can Play That Game","""Mark Brown"""
+"331","Crazy/Beautiful","""John Stockwell"""
+"332","Dirty Work",NA
+"333","Serial Mom","""John Waters"""
+"334","Quest for Fire","""Jean-Jacques Annaud"""
+"335","The Killer Inside Me","""Michael Winterbottom"""
+"336","Tae Guk Gi: The Brotherhood of War","""Je-gyu Kang"""
+"337","Jaws","""Steven Spielberg"""
+"338","Barbershop","""Tim Story"""
+"339","Time Bandits","""Terry Gilliam"""
+"340","Crossroads","""Tamra Davis"""
+"341","How High","""Jesse Dylan"""
+"342","Frida","""Julie Taymor"""
+"343","The Postman Always Rings Twice","""Bob Rafelson"""
+"344","Ravenous","""Antonia Bird"""
+"345","The Dangerous Lives of Altar Boys","""Peter Care"""
+"346","Madadayo","""Akira Kurosawa"""
+"347","Doctor Zhivago","""David Lean"""
+"348","Major League","""David S. Ward"""
+"349","Army of Darkness","""Sam Raimi"""
+"350","The Molly Maguires",NA
+"351","An Ideal Husband","""Oliver Parker"""
+"352","The Color of Money","""Martin Scorsese"""
+"353","The Longest Day","[""Andrew Marton"",""Bernhard Wicki"",""Darryl F. Zanuck"",""Gerd Oswald"",""Ken Annakin""]"
+"354","Recess: School's Out","""Chuck Sheetz"""
+"355","Commando","""Mark L. Lester"""
+"356","Friday After Next","""Marcus Raboy"""
+"357","The Last Dragon",NA
+"358","The Lawnmower Man","""Brett Leonard"""
+"359","Dogma","""Kevin Smith"""
+"360","Swimfan","""John Polson"""
+"361","Pete's Dragon","""David Lowery"""
+"362","The Dead Zone","""David Cronenberg"""
+"363","Valentine","""Jamie Blanks"""
+"364","On the Line","""Eric Bross"""
+"365","The Limey","""Steven Soderbergh"""
+"366","Gun Shy","""Eric Blakeney"""
+"367","Nicholas Nickleby","""Douglas McGrath"""
+"368","Cecil B. Demented","""John Waters"""
+"369","Owning Mahowny","""Richard Kwietniowski"""
+"370","Richard III",NA
+"371","Igby Goes Down","""Burr Steers"""
+"372","PCU","""Hart Bochner"""
+"373","Velvet Goldmine","""Todd Haynes"""
+"374","Two Evil Eyes","[""Dario Argento"",""George A. Romero""]"
+"375","Barbarella","""Roger Vadim"""
+"376","Club Dread","""Jay Chandrasekhar"""
+"377","28 Days Later","""Danny Boyle"""
+"378","Escape from Alcatraz","""Don Siegel"""
+"379","Half Baked","""Tamra Davis"""
+"380","American Psycho","""Mary Harron"""
+"381","Shadow of the Vampire","""E. Elias Merhige"""
+"382","Woman on Top","""Fina Torres"""
+"383","Swimming Pool","""Fran\u00e7ois Ozon"""
+"384","The Hole","""Joe Dante"""
+"385","The Omega Code","""Robert Marcarelli"""
+"386","The Piano","""Jane Campion"""
+"387","Logan's Run","""Michael Anderson"""
+"388","Action Jackson","""Craig R. Baxley"""
+"389","In Too Deep","""Michael Rymer"""
+"390","The Last Temptation of Christ","""Martin Scorsese"""
+"391","Rabbit-Proof Fence",NA
+"392","The Other Side of Heaven","""Mitch Davis"""
+"393","Gerry","""Gus Van Sant"""
+"394","The Four Seasons","""Alan Alda"""
+"395","Aberdeen","""Hans Petter Moland"""
+"396","The Return of the Living Dead","""Dan O'Bannon"""
+"397","Ordinary People","""Robert Redford"""
+"398","The Brothers","""Gary Hardwick"""
+"399","A Mighty Wind","""Christopher Guest"""
+"400","Halloween 5: The Revenge of Michael Myers","""Dominique Othenin-Girard"""
+"401","200 Cigarettes","""Risa Bramon Garcia"""
+"402","Morvern Callar","""Lynne Ramsay"""
+"403","11:14","""Greg Marcks"""
+"404","Bend It Like Beckham","""Gurinder Chadha"""
+"405","Sunshine State","""John Sayles"""
+"406","The Sting","""George Roy Hill"""
+"407","The Chorus","""Christophe Barratier"""
+"408","Wonderland","""James Cox"""
+"409","Irreversible","""Gaspar No\u00e9"""
+"410","A Nightmare on Elm Street 3: Dream Warriors","""Chuck Russell"""
+"411","20,000 Leagues Under the Sea",NA
+"412","Nighthawks","[""Bruce Malmuth"",""Gary Nelson""]"
+"413","April Fool's Day",NA
+"414","A Farewell to Arms",NA
+"415","Robin and Marian",NA
+"416","Party Monster","[""Fenton Bailey"",""Randy Barbato""]"
+"417","Bottle Rocket","""Wes Anderson"""
+"418","Fascination","""Klaus Menzel"""
+"419","Area 51","""Oren Peli"""
+"420","Dear Frankie","""Shona Auerbach"""
+"421","Treading Water","""Analeine Cal y Mayor"""
+"422","Four Weddings and a Funeral","""Mike Newell"""
+"423","25th Hour","""Spike Lee"""
+"424","Bound","[""Andy Wachowski"",""Lana Wachowski""]"
+"425","Character",NA
+"426","Spun","""Jonas \u00c5kerlund"""
+"427","Mean Machine","""Barry Skolnick"""
+"428","Whale Rider","""Niki Caro"""
+"429","Porky's","""Bob Clark"""
+"430","The Wash","""DJ Pooh"""
+"431","Talk Radio","""Oliver Stone"""
+"432","The Big Tease","""Kevin Allen"""
+"433","The Velocity of Gary",NA
+"434","Hell's Angels",NA
+"435","Network","""Sidney Lumet"""
+"436","Midnight Cowboy","""John Schlesinger"""
+"437","The Full Monty","""Peter Cattaneo"""
+"438","Chain of Command",NA
+"439","Frenzy",NA
+"440","Human Traffic","""Justin Kerrigan"""
+"441","Rosemary's Baby","""Roman Polanski"""
+"442","Goldfinger","""Guy Hamilton"""
+"443","Trainspotting","""Danny Boyle"""
+"444","Bowling for Columbine","""Michael Moore"""
+"445","Coming Home",NA
+"446","Spaced Invaders",NA
+"447","Trippin'",NA
+"448","Woman Thou Art Loosed",NA
+"449","Whipped",NA
+"450","Basquiat",NA
+"451","Happiness",NA
+"452","Riding Giants",NA
+"453","Singin' in the Rain",NA
+"454","Garden State",NA
+"455","Saving Face",NA
+"456","The Hustler",NA
+"457","Thirteen","""Catherine Hardwicke"""
+"458","Ghost Dog: The Way of the Samurai","""Jim Jarmusch"""
+"459","Dinner Rush","""Bob Giraldi"""
+"460","It's All Gone Pete Tong","""Michael Dowse"""
+"461","Bananas","""Woody Allen"""
+"462","Highway","""Imtiaz Ali"""
+"463","Northfork","""Michael Polish"""
+"464","A Streetcar Named Desire","""Elia Kazan"""
+"465","Buffalo '66","""Vincent Gallo"""
+"466","Repo Man","""Alex Cox"""
+"467","The Ballad of Jack and Rose","""Rebecca Miller"""
+"468","Modern Times",NA
+"469","Lock, Stock and Two Smoking Barrels","""Guy Ritchie"""
+"470","Trees Lounge","""Steve Buscemi"""
+"471","The Hebrew Hammer","""Jonathan Kesselman"""
+"472","Rebecca",NA
+"473","How Green Was My Valley",NA
+"474","Saw","""James Wan"""
+"475","Monsoon Wedding","""Mira Nair"""
+"476","Reservoir Dogs","""Quentin Tarantino"""
+"477","Grand Theft Parsons","""David Caffrey"""
+"478","Two Girls and a Guy","""James Toback"""
+"479","Walking and Talking","""Nicole Holofcener"""
+"480","Slam",NA
+"481","Orgazmo","""Trey Parker"""
+"482","Charly","""Adam Thomas Anderegg"""
+"483","Time Changer","""Rich Christiano"""
+"484","Interview with the Assassin","""Neil Burger"""
+"485","Hoop Dreams","""Steve James"""
+"486","Love Letters",NA
+"487","Mean Creek","""Jacob Aaron Estes"""
+"488","Seven Samurai",NA
+"489","The Slaughter Rule","[""Alex Smith"",""Andrew J. Smith""]"
+"490","The Toxic Avenger","[""Lloyd Kaufman"",""Michael Herz""]"
+"491","Napoleon Dynamite","""Jared Hess"""
+"492","Cries and Whispers",NA
+"493","Intolerance","""D.W. Griffith"""
+"494","Trekkies",NA
+"495","Tupac: Resurrection",NA
+"496","Chasing Amy","""Kevin Smith"""
+"497","A Fistful of Dollars","""Sergio Leone"""
+"498","Sweet Sweetback's Baadasssss Song",NA
+"499","Roger & Me",NA
+"500","Hollywood Shuffle","""Robert Townsend"""
+"501","The Mighty",NA
+"502","The Lost Skeleton of Cadavra","""Larry Blamire"""
+"503","Super Size Me","""Morgan Spurlock"""
+"504","The Brothers McMullen","""Edward Burns"""
+"505","Clerks","""Kevin Smith"""
+"506","Manito","""Eric Eason"""
+"507","Primer","""Shane Carruth"""

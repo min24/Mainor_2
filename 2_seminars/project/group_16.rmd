@@ -1,0 +1,421 @@
+
+```{r}
+library(readr)
+movies <- read_csv("~/shared/minor2_2018/data/movies_cut.csv")
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
+```
+
+```{r}
+library(RCurl)
+library(XML)
+library(rjson)
+library(stringr)
+library(tm)
+
+# Это функция, которая взять данные о главных актерах/актрисях из сайта metacritic (https://www.metacritic.com/movie/batman-begins/details). Input: Название фиьлма, Output: главные актеры
+
+# Внимание: не попробуйте эту функцию для длинного вектора названия фиьлмы. Потому что функция медленно работает (примерно 3 секунды за фильм), если длина вектор названия = 500, то время будет ~ 1500s ... Когда получится main_cast надо сохранить датафраме сразу (write.csv)
+
+get_cast = function(title) {
+  title = removePunctuation(title)
+  title = stringr::str_to_lower(title)
+  title = stringr::str_split(title, " ")[[1]]
+  title = stringr::str_c(title, collapse = "-")
+  link = stringr::str_c("https://www.metacritic.com/movie", title, "details", sep = "/")
+  # link = "https://www.metacritic.com/movie/batman-begins/details"
+  webpage <- RCurl::getURL(link)
+  if (webpage == "") { return(NA)}
+  else {
+    webpage <- readLines(tc <- textConnection(webpage)); close(tc)
+    pagetree <- XML::htmlTreeParse(webpage, error=function(...){}, useInternalNodes = TRUE)
+    # parse the tree by tables
+    x <- xpathSApply(pagetree, "//*/table", xmlValue)
+    
+    if (length(x)==0) {return(NA)}
+    else{
+    # do some clean up with regular expressions
+    x <- unlist(strsplit(x, "\n"))
+    x <- gsub("\t","",x)
+    x <- sub("^[[:space:]]*(.*?)[[:space:]]*$", "\\1", x, perl=TRUE)
+    x <- x[!(x %in% c("", "|"))]
+    m = match(c("Principal Cast", "Cast"), x)
+    if (is.na(m[1]) | is.na(m[2])) {return(NA)}
+    else{
+    y = x[(m[1]+2):(m[2]-1)]
+    y = y[seq(1, length(y), by = 2)]
+    z = rjson::toJSON(y)
+    return(z)}
+    }
+    }
+}
+
+get_cast("robin hood")
+```
+
+
+```{r}
+
+main_cast = Map(get_cast, movies$title) 
+# это не ошибка, просто он медленно работает, примерно 30 минут. Поэто му я сохранил результат в датасет data_cast.csv чтобы не нужно повторить эту функцию.
+save = main_cast
+```
+
+```{r}
+values = unlist(main_cast, use.names = F)
+data_cast = data.frame(title = names(main_cast), cast = values)
+data_cast$cast = as.character(data_cast$cast)
+data_cast$title = as.character(data_cast$title)
+typeof(data_cast)
+write.csv(data_cast, "data_cast.csv")
+```
+
+```{r}
+library(dplyr)
+```
+
+```{r}
+movies <- read_csv("~/shared/minor2_2018/data/movies_cut.csv")
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
+ratings=ratings %>% group_by(movie_id, movie_year) %>% summarise(rating = mean(rating,na.rm = T))
+movies = left_join(movies, ratings, by = "movie_id")
+movies = movies %>% select(-X1)
+```
+
+```{r}
+library(stringr)
+clear_punc = function(text) {
+  text = str_remove(text, '\\[')
+  text = str_remove(text, '\\]')
+  text = str_remove_all(text, "\"")
+  text = str_replace_all(text, " ", "-")
+  return(text)
+}
+```
+
+
+
+```{r}
+library(RCurl)
+library(XML)
+library(rjson)
+library(stringr)
+library(tm)
+
+# Это функция, которая взять данные о главных актерах/актрисях из сайта metacritic (https://www.metacritic.com/movie/batman-begins/details). Input: Название фиьлма, Output: главные актеры
+
+# Внимание: не попробуйте эту функцию для длинного вектора названия фиьлмы. Потому что функция медленно работает (примерно 3 секунды за фильм), если длина вектор названия = 500, то время будет ~ 1500s ... Когда получится main_cast надо сохранить датафраме сразу (write.csv)
+
+get_director = function(title) {
+  title = removePunctuation(title)
+  title = stringr::str_to_lower(title)
+  title = stringr::str_split(title, " ")[[1]]
+  title = stringr::str_c(title, collapse = "-")
+  link = stringr::str_c("https://www.metacritic.com/movie", title, "details", sep = "/")
+  # link = "https://www.metacritic.com/movie/batman-begins/details"
+  webpage <- RCurl::getURL(link)
+  if (webpage == "") { return(NA)}
+  else {
+    webpage <- readLines(tc <- textConnection(webpage)); close(tc)
+    pagetree <- XML::htmlTreeParse(webpage, error=function(...){}, useInternalNodes = TRUE)
+    # parse the tree by tables
+    x <- xpathSApply(pagetree, "//*/table", xmlValue)
+    
+    if (length(x)==0) {return(NA)}
+    else{
+    # do some clean up with regular expressions
+    x <- unlist(strsplit(x, "\n"))
+    x <- gsub("\t","",x)
+    x <- sub("^[[:space:]]*(.*?)[[:space:]]*$", "\\1", x, perl=TRUE)
+    x <- x[!(x %in% c("", "|"))]
+    m = match(c("Director", "Writer"), x)
+    if (is.na(m[1]) | is.na(m[2])) {return(NA)}
+    else{
+    y = x[(m[1]+2):(m[2]-1)]
+    y = y[seq(1, length(y), by = 2)]
+    z = rjson::toJSON(y)
+    return(z)}
+    }
+    }
+}
+
+get_director("The Love Letter")
+```
+
+```{r}
+main_director = Map(get_director, movies$title) # это не ошибка, просто он медленно работает, примерно 30 минут. Поэто му я сохранил результат в датасет data_cast.csv чтобы не нужно повторить эту функцию.
+save2 = main_director
+```
+
+```{r}
+values = unlist(main_director, use.names = F)
+data_director = data.frame(title = names(main_director), director = values)
+data_director$director = as.character(data_director$director)
+data_director$title = as.character(data_director$title)
+typeof(data_director)
+write.csv(data_director, "data_director.csv")
+```
+
+```{r}
+library(readr)
+movies <- read_csv("~/shared/minor2_2018/data/movies_cut.csv")
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
+ratings=ratings %>% group_by(movie_id, movie_year) %>% summarise(rating = mean(rating,na.rm = T))
+movies = left_join(movies, ratings, by = "movie_id") %>% select(-X1)
+movies2 = movies %>% dplyr::select(title, movie_id, rating, genres, popularity, runtime, movie_year, production_companies, production_countries, keywords)
+
+data_cast = read_csv("data_cast.csv") %>% select(-X1)
+
+movies2 = movies2 %>% left_join(data_cast, by = "title")
+
+data_director = read_csv("data_director.csv")%>% select(-X1)
+movies2 = movies2 %>% left_join(data_director, by = "title")
+
+movies2$cast = clear_punc(movies2$cast)
+movies2$director = clear_punc(movies2$director)
+movies2 = distinct(movies2)
+write.csv(movies2, "movies2.csv")
+```
+
+
+```{r}
+#=============================================================================>
+```
+```{r}
+movies2 = read_csv("movies2.csv")
+```
+
+```{r}
+movies2$Var1 = movies2$title
+connect = function (tbl, movies2) {
+  tbl = as.data.frame(tbl)
+  tbl = spread(tbl, key = Var2, value = Freq)
+  movies2 = movies2 %>% dplyr::left_join(tbl, key = "Var1")
+  return(movies2)
+}
+# movies2 = connect(tbl3)
+```
+
+
+```{r}
+#Rec_sys_1
+```
+
+```{r}
+movies2 = read_csv("movies2.csv")
+movies2$Var1 = movies2$title
+```
+
+```{r}
+library(readr)
+movies <- read_csv("~/shared/minor2_2018/data/movies_cut.csv")
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
+```
+
+```{r}
+movies2$cast = clear_punc(movies2$cast)
+```
+```{r}
+data_ = movies2 %>% tidytext::unnest_tokens(principal_cast, cast)
+tbl4 = table(data_$title, data_$principal_cast)
+```
+
+```{r}
+library(tidyr)
+source("~/shared/minor2_2018/2-tm-net/extract_json.R") 
+movies_tbl = movies2 %>% select(X1, genres)
+tbl1 = extract_json2(df = movies2, col = "genres")
+tbl1 = table(tbl1$Var1, tbl1$genres_sep)
+
+tbl2 = extract_json2(df = movies2, col = "production_companies")
+tbl2 = table(tbl2$Var1, tbl2$production_companies_sep)
+
+tbl3 = extract_json2(df = movies2, col = "production_countries")
+tbl3 = table(tbl3$Var1, tbl3$production_countries_sep)
+
+data_movie = connect(tbl1, movies2)
+data_movie = connect(tbl2, data_movie)
+data_movie = connect(tbl3, data_movie)
+data_movie = connect(tbl4, data_movie)
+data_movie = distinct(data_movie)
+```
+
+```{r}
+data_movie = data_movie %>% dplyr::select(-X1, -rating, -runtime, -production_countries, -Var1, -title, -genres, -movie_year, -keywords, -popularity, -production_companies, -cast, -director)
+```
+
+```{r}
+data_movie = distinct(data_movie)
+rownames(data_movie) = data_movie$movie_id
+data_movie = data_movie %>% select(-movie_id)
+sim = lsa::cosine(t(as.matrix(data_movie)))
+```
+
+```{r}
+diag(sim) = 0
+```
+
+```{r}
+# Function get films for user
+getFilms1 = function(userId, nfilm = 5){
+  user = ratings %>% filter(customer_id == userId & rating == 5)
+  
+  if (nrow(user)==0) {
+    recommend = "The Lord of The Ring"
+  } else {
+    mostSimilar = head(sort(sim[,as.character(user$movie_id)], decreasing = T), n = nfilm)
+    a = which(sim[,as.character(user$movie_id)] %in% mostSimilar, arr.ind = TRUE)
+    rows = a %% dim(sim)[1]
+    result = rownames(sim)[rows]
+    recommend = filter(movies2,movie_id %in% result) %>% dplyr::select(title)
+  }
+  
+  recommend
+}
+getFilms1(139122, n = 6)
+```
+
+
+
+```{r}
+#Rec_sys_2
+```
+
+```{r}
+library(readr)
+movies2 = read_csv("movies2.csv")
+movies2$Var1 = movies2$title
+```
+```{r}
+movies2$director = clear_punc(movies2$director)
+
+movies2$cast = clear_punc(movies2$cast)
+```
+
+```{r}
+data_cast = movies2 %>% tidytext::unnest_tokens(principal_cast, cast)
+tbl4 = table(data_cast$title, data_cast$principal_cast)
+data_dir = movies2 %>% tidytext::unnest_tokens(director, director)
+tbl5 = table(data_dir$title, data_dir$director)
+```
+
+```{r}
+data_movie2 = connect(tbl1, movies2)
+data_movie2 = connect(tbl2, data_movie2)
+data_movie2 = connect(tbl3, data_movie2)
+data_movie2 = connect(tbl4, data_movie2)
+data_movie2 = connect(tbl5, data_movie2)
+data_movie2 = distinct(data_movie2)
+
+```
+
+```{r}
+data_movie2 = data_movie2 %>% dplyr::select(-X1, -rating, -runtime, -production_countries, -Var1, -title, -genres, -movie_year, -keywords, -popularity, -production_companies, -cast, -director)
+```
+
+```{r}
+data_movie2 = distinct(data_movie2)
+rownames(data_movie2) = data_movie2$movie_id
+data_movie2 = data_movie2 %>% select(-movie_id)
+sim2 = lsa::cosine(t(as.matrix(data_movie2)))
+
+```
+
+
+```{r}
+diag(sim2) = 0
+#mostSimilar = max(sim2[,"886"], na.rm = T)
+#a = which(sim2[,"886"] == mostSimilar, arr.ind = TRUE)
+
+```
+```{r}
+# Function get films for user
+getFilms2 = function(userId, nfilm = 5){
+  user = ratings %>% filter(customer_id == userId & rating == 5)
+  
+  if (nrow(user)==0) {
+    recommend = "The Lord of The Ring"
+  } else {
+    mostSimilar = head(sort(sim2[,as.character(user$movie_id)], decreasing = T), n = nfilm)
+    a = which(sim2[,as.character(user$movie_id)] %in% mostSimilar, arr.ind = TRUE)
+    rows = a %% dim(sim2)[1]
+    result = rownames(sim2)[rows]
+    recommend = filter(movies2,movie_id %in% result) %>% dplyr::select(title)
+  }
+  
+  return(recommend)
+}
+getFilms2(2417642, 5)
+```
+
+
+
+```{r}
+#Rec_sys_3
+```
+
+```{r}
+library(readr)
+movies2 = read_csv("movies2.csv")
+movies2$Var1 = movies2$title
+```
+
+```{r}
+movies2$director = clear_punc(movies2$director)
+movies2$cast = clear_punc(movies2$cast)
+```
+
+```{r}
+data_movie3 = connect(tbl1, movies2)
+data_movie3 = connect(tbl2, data_movie3)
+data_movie3 = connect(tbl3, data_movie3)
+data_movie3 = connect(tbl4, data_movie3)
+data_movie3 = connect(tbl5, data_movie3)
+
+data_movie3 = distinct(data_movie3)
+```
+
+```{r}
+data_movie3 = data_movie3 %>% dplyr::select(-X1, -rating, -runtime, -production_countries, -Var1, -title, -genres, -movie_year, -keywords, -popularity, -production_companies, -cast, -director)
+```
+
+```{r}
+#data_movie = read.csv("data_movie.csv")
+
+keys_sent = read.csv("keys_sent.csv")
+data_movie3 = data_movie3 %>% left_join(keys_sent)
+rownames(data_movie3) = data_movie3$movie_id
+data_movie3 = data_movie3 %>% select(-movie_id)
+sim3 = lsa::cosine(t(as.matrix(data_movie3)))
+#sim3[1:5, 1:5] %>% round(3)
+
+```
+
+```{r}
+diag(sim3) = 0
+#mostSimilar3 = max(sim3[,"886"], na.rm = T)
+#a3 = which(sim3[,"886"] == mostSimilar, arr.ind = TRUE)
+#names(a3)
+#mostSimilar3
+```
+
+
+```{r}
+# Function get films for user
+getFilms3 = function(userId, nfilm = 5){
+  user = ratings %>% filter(customer_id == userId & rating == 5)
+  
+  if (nrow(user)==0) {
+    recommend = "The Lord of The Ring"
+  } else {
+    mostSimilar = head(sort(sim3[,as.character(user$movie_id)], decreasing = T), n = nfilm)
+    a = which(sim3[,as.character(user$movie_id)] %in% mostSimilar, arr.ind = TRUE)
+    rows = a %% dim(sim3)[1]
+    result = rownames(sim3)[rows]
+    recommend = filter(movies2,movie_id %in% result) %>% dplyr::select(title)
+  }
+  
+  return(recommend)
+}
+getFilms3(2417642, 5)
+```
+

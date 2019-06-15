@@ -1,0 +1,77 @@
+
+```{r}
+library(tidyverse)
+movies <- read_csv("~/shared/minor2_2018/data/movies_cut.csv")
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
+ratings = ratings %>% dplyr::select(-X1)
+```
+
+### Оценки фильмов пользователями
+
+Сохраним только оценки пользователей и фильмы
+
+```{r}
+rates = dplyr::select(ratings, customer_id, movie_id, rating)
+```
+
+Преобразуем к таблице в "широком" формате
+
+```{r}
+library(tidyr)
+
+rates = spread(rates, key = movie_id, value = rating)
+rates = select(rates, -customer_id)
+
+```
+
+Начинаем работать с пакетом `recommenderlab`
+
+```{r message=FALSE, warning=FALSE}
+library(recommenderlab)
+```
+
+```{r}
+set.seed(100)
+test_ind <- sample(1:nrow(ratings_movies), size = nrow(ratings_movies)*0.2)
+recc_data_train <- ratings_movies[-test_ind, ]
+recc_data_test <- ratings_movies[test_ind, ]
+```
+
+```{r}
+recc_model <- Recommender(data = recc_data_train, method = "IBCF", parameter = list(k = 30))
+recc_model
+```
+```{r}
+
+model_details <- getModel(recc_model)
+model_details$description
+model_details$sim[1:10, 1:10]
+```
+
+```{r}
+recc_predicted <- predict(object = recc_model, newdata = recc_data_test, n = 6)
+recc_predicted
+```
+```{r}
+recc_user_1 <- recc_predicted@items[[1]]
+recc_user_1
+```
+```{r}
+movies_user_1 <- recc_predicted@itemLabels[recc_user_1]
+movies_user_1
+```
+```{r}
+names_movies_user_1 <- ratings$title[match(movies_user_1, ratings$movie_id)]
+names_movies_user_1
+```
+
+```{r}
+recc_predicted@ratings["1097436"]
+
+```
+
+```{r}
+county_data = acs2017_county_data %>% select(County, TotalPop, Unemployment, )
+```
+
+
