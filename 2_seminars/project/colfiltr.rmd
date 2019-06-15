@@ -1,5 +1,4 @@
 
-
 ```{r}
 library(tidyverse)
 movies <- read_csv("~/movies2-2.csv")
@@ -39,7 +38,7 @@ test_ind <- sample(1:nrow(ratings_movies), size = nrow(ratings_movies)*0.2)
 recc_data_train <- ratings_movies[-test_ind, ]
 recc_data_test <- ratings_movies[test_ind, ]
 
-recc_model <- Recommender(data = recc_data_train, method = "UBCF", parameter = list(k = 30))
+recc_model <- Recommender(data = recc_data_train, method = "IBCF", parameter = list(k = 30))
 recc_model
 ```
 Рекомендации для __-ого пользователя

@@ -1,0 +1,56 @@
+---
+title: "Project_Part2_Usmanova"
+output: html_document
+---
+
+### Разведочный анализ данных: анализ ключевых слов на сентименты
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+```{r}
+library(readr)
+library(xtable)
+library(dplyr)
+library(igraph)
+library(stringr)
+library(ggplot2)
+library(textstem)
+library(tidytext)
+movies.pr = read_csv("~/DataKatya/movies2.csv")
+source("~/shared/minor2_2018/2-tm-net/extract_json.R") 
+movies_with_keys = extract_json2(df = movies.pr, col = "keywords")
+keys = movies_with_keys %>% select(movie_id, keywords_sep, keywords_v)
+keys$keywords_sep = as.character(keys$keywords_sep)
+```
+
+
+```{r}
+#Код для матрицы по сентиментам ключевых слов, которая вошла в рекомендательную систему по характеристикам фильмов!!!!!!!
+keys = keys %>%
+  unnest_tokens(word, keywords_sep)
+sentdict = get_sentiments("afinn")#оценки от -5 до 5
+keys.sent = keys %>% inner_join(sentdict, by = "word")
+keys.sent = keys.sent %>% group_by(movie_id) %>% summarise(mean.score = mean(score))
+rownames(keys.sent) = str_c("id", keys.sent$movie_id, sep = "_")
+keys.sent = keys.sent %>% select(mean.score)
+#keys.spr = spread(met, key = keywords_sep, value = keywords_v)
+#write.csv(keys.sent, "keys.sent.csv")
+```
+
+```{r}
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+ggplot(data = keys.sent) +
+  geom_histogram(aes(x = mean.score), fill="red", col="blue", alpha = 1) + 
+  ggtitle("Распределение фильмов в соответствии \nсо средней оценкой окрашенности ключевых слов") + 
+  xlab("Средняя оценочность ключевых слов") + 
+  ylab("Количество фильмов")+
+  theme(axis.text.x = element_text(angle = 15)) +
+  geom_vline(aes(xintercept = median(mean.score)), linetype="dashed", color="#3d1d0d", size=1) +
+  geom_vline(aes(xintercept = Mode(mean.score)), linetype="solid", color="green", size=0.9)
+```
+

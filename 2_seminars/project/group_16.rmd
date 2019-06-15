@@ -1,4 +1,11 @@
 
+
+
+###Собрать данные, допонительные данные, соединить доп.данные в датасет
+```{r}
+# Если эта часть долго работает, вы можете загрузить готовые датасет отсюда и дальше запустите код: https://drive.google.com/open?id=1kjk7u-Y_5cjtq8b-5iV8U_TqS2YABKa8
+```
+
 ```{r}
 library(readr)
 movies <- read_csv("~/shared/minor2_2018/data/movies_cut.csv")
@@ -81,17 +88,6 @@ movies = left_join(movies, ratings, by = "movie_id")
 movies = movies %>% select(-X1)
 ```
 
-```{r}
-library(stringr)
-clear_punc = function(text) {
-  text = str_remove(text, '\\[')
-  text = str_remove(text, '\\]')
-  text = str_remove_all(text, "\"")
-  text = str_replace_all(text, " ", "-")
-  return(text)
-}
-```
-
 
 
 ```{r}
@@ -169,7 +165,21 @@ movies2 = movies2 %>% left_join(data_cast, by = "title")
 
 data_director = read_csv("data_director.csv")%>% select(-X1)
 movies2 = movies2 %>% left_join(data_director, by = "title")
+```
 
+```{r}
+library(stringr)
+clear_punc = function(text) {
+  text = str_remove(text, '\\[')
+  text = str_remove(text, '\\]')
+  text = str_remove_all(text, "\"")
+  text = str_remove_all(text, " ")
+  return(text)
+}
+warnings()
+```
+
+```{r}
 movies2$cast = clear_punc(movies2$cast)
 movies2$director = clear_punc(movies2$director)
 movies2 = distinct(movies2)
@@ -178,7 +188,203 @@ write.csv(movies2, "movies2.csv")
 
 
 ```{r}
+#===================================================================================
+```
+
+
+### Разведочный анализ данных: анализ ключевых слов на сентименты
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+```{r}
+library(readr)
+library(xtable)
+library(dplyr)
+library(igraph)
+library(stringr)
+library(ggplot2)
+library(textstem)
+library(tidytext)
+movies.pr = read_csv("movies2.csv")
+source("~/shared/minor2_2018/2-tm-net/extract_json.R") 
+movies_with_keys = extract_json2(df = movies.pr, col = "keywords")
+keys = movies_with_keys %>% select(movie_id, keywords_sep, keywords_v)
+keys$keywords_sep = as.character(keys$keywords_sep)
+```
+
+
+```{r}
+#Код для матрицы по сентиментам ключевых слов, которая вошла в рекомендательную систему по характеристикам фильмов!!!!!!!
+keys = keys %>%
+  unnest_tokens(word, keywords_sep)
+sentdict = get_sentiments("afinn")#оценки от -5 до 5
+keys.sent = keys %>% inner_join(sentdict, by = "word")
+keys.sent = keys.sent %>% group_by(movie_id) %>% summarise(mean.score = mean(score))
+keys_sent = keys.sent
+rownames(keys.sent) = str_c("id", keys.sent$movie_id, sep = "_")
+keys.sent = keys.sent %>% select(mean.score)
+#keys.spr = spread(met, key = keywords_sep, value = keywords_v)
+write.csv(keys_sent, "keys_sent.csv")
+```
+
+```{r}
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+ggplot(data = keys.sent) +
+  geom_histogram(aes(x = mean.score), fill="red", col="blue", alpha = 1) + 
+  ggtitle("Распределение фильмов в соответствии \nсо средней оценкой окрашенности ключевых слов") + 
+  xlab("Средняя оценочность ключевых слов") + 
+  ylab("Количество фильмов")+
+  theme(axis.text.x = element_text(angle = 15)) +
+  geom_vline(aes(xintercept = median(mean.score)), linetype="dashed", color="#3d1d0d", size=1) +
+  geom_vline(aes(xintercept = Mode(mean.score)), linetype="solid", color="green", size=0.9)
+```
+
+
+
+
+```{r}
+#======================================================================================
+```
+
+### Сетевой анализ: Кластеризация фильмов с Netflix на основе данных о **компаниях-производителях**.
+
+```{r}
+library(readr)
+library(xtable)
+library(dplyr)
+library(igraph)
+library(stringr)
+library(ggplot2)
+source("~/shared/minor2_2018/2-tm-net/extract_json.R")
+movies.pr = read_csv("movies2.csv")
+```
+
+```{r}
+movies2 = read_csv("movies2.csv")
+movies2$Var1 = movies2$title
+
+library(tidyr)
+connect = function (tbl, movies2) {
+  tbl = as.data.frame(tbl)
+  tbl = spread(tbl, key = Var2, value = Freq)
+  movies2 = movies2 %>% dplyr::left_join(tbl, key = "Var1")
+  return(movies2)
+}
+
+
+tbl2 = extract_json2(df = movies2, col = "production_companies")
+tbl2 = table(tbl2$Var1, tbl2$production_companies_sep)
+company = connect(tbl2, movies2)
+write.csv(company, "company.csv")
+```
+
+```{r}
+companies = read_csv("company.csv")
+comp = companies %>% select(-X1, -X1_1, -title, -rating, -genres, -popularity, -runtime, -movie_year, -production_companies, -production_countries, -keywords, -cast, -Var1)
+comp = distinct(comp)
+rownames(comp) <- str_c("id", comp$movie_id, sep = "_")
+ 
+comp = comp %>% 
+  select(-movie_id) %>% 
+  as.matrix()
+```
+
+```{r include=FALSE}
+c <- graph_from_incidence_matrix(comp)
+ 
+is.bipartite(c)
+
+pr = bipartite.projection(c)
+p <- pr[[1]]# 1, потому что связь фильм-фильм
+p
+V(p)$label <- NA
+lt = layout.fruchterman.reingold(p)
+```
+
+
+#### 1. Первый вариант кластеров
+```{r}
+plot(p, vertex.size = 2, layout = lt)
+```
+
+#### 2. Взвесим и построим распределение силы связи между фильмами с указанием среднего
+```{r}
+library(tnet)
+ 
+movies_id <- rownames(comp)
+ 
+df <- data.frame(movies = str_replace(movies_id, "id_", ""), i = 1:507)
+ 
+p = projecting_tm(comp, method="Newman")
+p <- left_join(p, df, by = "i")
+ 
+df <- data.frame(movies_1 = str_replace(movies_id, "id_", ""), j = 1:507)
+p <- left_join(p, df, by = "j")
+p = dplyr::select(p, i = movies, j = movies_1, w)
+ 
+ggplot(p) + 
+  geom_histogram(aes(x=w), fill = "pink") +
+  geom_vline(aes(xintercept=mean(w)), color="blue", linetype="dashed", size=1) +
+  xlab("Коэффициет Ньюмана") +
+  ylab("Количество связей")+
+  ggtitle("Распределение связей между фильмами по коэффициенту Ньюмана") +
+  theme_grey()
+```
+
+
+#### 3. Кластеры фильмов после отсечения связей с силой ниже среднего
+```{r}
+p1 = filter(p, w >= 0.07085457) %>% select(-w)
+ 
+set.seed(483)
+ 
+net1 <- simplify(graph_from_edgelist(as.matrix(p1), directed=F))
+V(net1)$color <- "steel blue"
+V(net1)$label <- NA
+ 
+plot(net1, vertex.label.color = "black", vertex.size = 3, layout = layout.kamada.kawai(net1))
+```
+
+
+#### 4. Кластеризация на основе данных о компаниях-производителях
+```{r, dpi=100, fig.height=7, fig.width=7}
+membership = membership(edge.betweenness.community(net1))
+ 
+plot(net1, layout = layout.kamada.kawai(net1), edge.arrow.size = 0, vertex.color = membership, vertex.size = 5,vertex.label.cex = 0.4, margin = -0.1)
+```
+
+
+#### 5. Примеры фильмов из разных кластеров
+```{r}
+mem = data.frame(movie_id = V(net1)$name %>% as.numeric(), membership = membership %>% as.numeric())
+
+mem2 = inner_join(mem, companies, by = "movie_id")
+mem2 = mem2 %>% select(movie_id, membership, title)
+table(membership)
+mem2 %>% filter(membership %in% c(14, 15)) %>% knitr::kable(capture = "Фильмы из разных кластеров")
+```
+
+
+#### *Вывод:* 
+Кластеризация, проведенная на основе компаний-производителей, помогла выявить, что эта переменная также может быть полезна и эффективна при работе в рекомендательной системе. 
+Из получившихся кластеров действительно видно, что фильмы образуют группы на основе пересечений компаний, которыми были выпущены. Так, например, фильм "Little Nicky" был выпущен тремя компаниями ("New Line Cinema", "Avery Pix", "Happy Madison Productions"), "About Schmidt" выпущен теми же компаниями (первыми двумя из трех). Компания "Miramax Films" задействована как в создании фильма "Serendipity", так и "On the Line".
+
+```{r}
+#======================================================================================
+```
+
+```{r}
 #=============================================================================>
+```
+
+
+```{r}
+#Rec_sys_1
 ```
 ```{r}
 movies2 = read_csv("movies2.csv")
@@ -197,10 +403,6 @@ connect = function (tbl, movies2) {
 
 
 ```{r}
-#Rec_sys_1
-```
-
-```{r}
 movies2 = read_csv("movies2.csv")
 movies2$Var1 = movies2$title
 ```
@@ -211,9 +413,7 @@ movies <- read_csv("~/shared/minor2_2018/data/movies_cut.csv")
 ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
 ```
 
-```{r}
-movies2$cast = clear_punc(movies2$cast)
-```
+
 ```{r}
 data_ = movies2 %>% tidytext::unnest_tokens(principal_cast, cast)
 tbl4 = table(data_$title, data_$principal_cast)
@@ -225,12 +425,18 @@ source("~/shared/minor2_2018/2-tm-net/extract_json.R")
 movies_tbl = movies2 %>% select(X1, genres)
 tbl1 = extract_json2(df = movies2, col = "genres")
 tbl1 = table(tbl1$Var1, tbl1$genres_sep)
+# genre = connect(tbl1, movies2)
+# write.csv(genre, "genre.csv")
 
 tbl2 = extract_json2(df = movies2, col = "production_companies")
 tbl2 = table(tbl2$Var1, tbl2$production_companies_sep)
+# company = connect(tbl2, movies2)
+# write.csv(company, "company.csv")
 
 tbl3 = extract_json2(df = movies2, col = "production_countries")
 tbl3 = table(tbl3$Var1, tbl3$production_countries_sep)
+# country = connect(tbl3, movies2)
+# write.csv(country, "country.csv")
 
 data_movie = connect(tbl1, movies2)
 data_movie = connect(tbl2, data_movie)
@@ -271,7 +477,7 @@ getFilms1 = function(userId, nfilm = 5){
   
   recommend
 }
-getFilms1(139122, n = 6)
+getFilms1(139122, n = 5)
 ```
 
 
@@ -285,11 +491,7 @@ library(readr)
 movies2 = read_csv("movies2.csv")
 movies2$Var1 = movies2$title
 ```
-```{r}
-movies2$director = clear_punc(movies2$director)
 
-movies2$cast = clear_punc(movies2$cast)
-```
 
 ```{r}
 data_cast = movies2 %>% tidytext::unnest_tokens(principal_cast, cast)
@@ -359,10 +561,6 @@ movies2 = read_csv("movies2.csv")
 movies2$Var1 = movies2$title
 ```
 
-```{r}
-movies2$director = clear_punc(movies2$director)
-movies2$cast = clear_punc(movies2$cast)
-```
 
 ```{r}
 data_movie3 = connect(tbl1, movies2)
@@ -379,7 +577,7 @@ data_movie3 = data_movie3 %>% dplyr::select(-X1, -rating, -runtime, -production_
 ```
 
 ```{r}
-#data_movie = read.csv("data_movie.csv")
+
 
 keys_sent = read.csv("keys_sent.csv")
 data_movie3 = data_movie3 %>% left_join(keys_sent)
@@ -417,5 +615,171 @@ getFilms3 = function(userId, nfilm = 5){
   return(recommend)
 }
 getFilms3(2417642, 5)
+```
+
+```{r}
+#========================================================================================
+```
+
+###colfiltr
+
+
+```{r}
+library(tidyverse)
+movies <- read_csv("movies2.csv")
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
+ratings = ratings %>% dplyr::select(-X1)
+
+rates_i = select(ratings, customer_id, movie_id, rating)
+```
+
+Преобразуем к таблице в "широком" формате
+```{r}
+library(tidyr)
+rates_i = spread(rates_i, key = movie_id, value = rating)
+```
+
+Переведем сначала пользователей в имена строк 
+```{r}
+rownames(rates_i) = rates_i$customer_id
+rates_i = select(rates_i, -customer_id)
+library(recommenderlab)
+```
+
+```{r}
+rates_i = as.matrix(rates_i)
+r_i = as(rates_i, "realRatingMatrix")
+r_i
+```
+
+Отберем только строки и столбцы с нужным количеством оценок
+```{r}
+ratings_movies_i <- r_i[rowCounts(r_i) > 5, colCounts(r_i) > 10] 
+```
+```{r}
+set.seed(100)
+test_ind_i <- sample(1:nrow(ratings_movies_i), size = nrow(ratings_movies_i)*0.2)
+recc_data_train_i <- ratings_movies_i[-test_ind_i, ]
+recc_data_test_i <- ratings_movies_i[test_ind_i, ]
+
+recc_model_ibcf <- Recommender(data = recc_data_train_i, method = "IBCF", parameter = list(k = 30))
+recc_model_ibcf
+```
+Рекомендации для __-ого пользователя
+```{r}
+recc_predicted_ibcf <- predict(object = recc_model_ibcf, newdata = recc_data_test_i, n = 6)
+recc_user_1_ibcf <- recc_predicted_ibcf@items[[100]]
+recc_user_1_ibcf
+```
+
+Это номер строк в матрице, вытащим id фильмов
+```{r}
+movies_user_1_ibcf <- recc_predicted_ibcf@itemLabels[recc_user_1_ibcf]
+movies_user_1_ibcf
+
+#вытащим названия
+names_movies_user_1_ibcf <- ratings$title[match(movies_user_1_ibcf, ratings$movie_id)]
+names_movies_user_1_ibcf
+```
+
+```{r}
+getRecommendation_ibcf = function(userId){
+userId = as.character(userId)
+recc_user_1_ibcf <- recc_predicted_ibcf@items[[userId]]
+movies_user_1_ibcf <- recc_predicted_ibcf@itemLabels[recc_user_1_ibcf]
+
+
+#вытащим названия
+names_movies_user_1_ibcf <- ratings$title[match(movies_user_1_ibcf, ratings$movie_id)]
+return(names_movies_user_1_ibcf)
+}
+
+getRecommendation_ibcf(139122)
+```
+
+
+```{r}
+#====================================================================================
+```
+
+###colfiltrUSER
+
+
+```{r}
+library(tidyverse)
+movies <- read_csv("movies2.csv")
+ratings <- read_csv("~/shared/minor2_2018/data/ratings_cut.csv")
+ratings = ratings %>% dplyr::select(-X1)
+
+rates_u = select(ratings, customer_id, movie_id, rating)
+```
+
+Преобразуем к таблице в "широком" формате
+```{r}
+library(tidyr)
+rates_u = spread(rates_u, key = movie_id, value = rating)
+```
+
+Переведем сначала пользователей в имена строк 
+```{r}
+rownames(rates_u) = rates_u$customer_id
+rates_u = select(rates_u, -customer_id)
+library(recommenderlab)
+```
+
+```{r}
+rates_u = as.matrix(rates_u)
+r_u = as(rates_u, "realRatingMatrix")
+r_u
+```
+
+Отберем только строки и столбцы с нужным количеством оценок
+```{r}
+ratings_movies_u <- r_u[rowCounts(r_u) > 5, colCounts(r_u) > 10] 
+```
+```{r}
+set.seed(100)
+test_ind_u <- sample(1:nrow(ratings_movies_u), size = nrow(ratings_movies_u)*0.2)
+recc_data_train_u <- ratings_movies_u[-test_ind_u, ]
+recc_data_test_u <- ratings_movies_u[test_ind_u, ]
+
+recc_model_ubcf <- Recommender(data = recc_data_train_u, method = "UBCF", parameter = list(k = 30))
+recc_model_ubcf
+```
+Рекомендации для __-ого пользователя
+```{r}
+recc_predicted_ubcf <- predict(object = recc_model_ubcf, newdata = recc_data_test_u, n = 6)
+recc_user_1_ubcf <- recc_predicted_ubcf@items[[100]]
+recc_user_1_ubcf
+```
+
+Это номер строк в матрице, вытащим id фильмов
+```{r}
+movies_user_1_ubcf <- recc_predicted_ubcf@itemLabels[recc_user_1_ubcf]
+movies_user_1_ubcf
+
+#вытащим названия
+names_movies_user_1_ubcf <- ratings$title[match(movies_user_1_ubcf, ratings$movie_id)]
+names_movies_user_1_ubcf
+```
+
+```{r}
+getRecommendation_ubcf = function(userId){
+userId = as.character(userId)
+recc_user_1_ubcf <- recc_predicted_ubcf@items[[userId]]
+movies_user_1_ubcf <- recc_predicted_ubcf@itemLabels[recc_user_1_ubcf]
+
+
+#вытащим названия
+names_movies_user_1_ubcf <- ratings$title[match(movies_user_1_ubcf, ratings$movie_id)]
+return(names_movies_user_1_ubcf)
+}
+
+getRecommendation_ubcf(139122)
+```
+
+```{r}
+getRecommendation_ibcf(139122)
+getRecommendation_ubcf(139122)
 ```
 
