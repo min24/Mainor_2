@@ -9,10 +9,6 @@ output: 'html_document'
 knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
 ```
 
-```{r}
-movies <- read_csv("~/shared/minor2_2018/data/movies.csv")
-ratings <- read_csv("~/shared/minor2_2018/data/ratings.csv")
-```
 
  
 ```{r}
@@ -27,15 +23,10 @@ library(tidyr)
 library(ggplot2)
 library(knitr)
 ```
-```{r}
-movies <- read_csv("C:/Users/Duy/Desktop/Mainor_2/data/movies.csv")
-ratings <- read_csv("C:/Users/Duy/Desktop/Mainor_2/data/ratings.csv")
-```
 
 ```{r}
-
-##(Data Processing)
-
+movies <- read_csv("~/shared/minor2_2018/data/movies.csv")
+ratings <- read_csv("~/shared/minor2_2018/data/ratings.csv")
 ```
 
 
@@ -64,15 +55,23 @@ movies$release_date = dmy(movies$release_date)
 
 ```
 ```{r}
+# movies2 = movies
+# movies$keywords = f1(movies$keywords)
+
+```
+```{r}
 # extract all json data
 f = function(i) {
-  return(i%>% str_replace_all('name ', '') %>% str_c(collapse = ', '))
+  result = i%>% str_replace_all('name ', '') %>% str_c(collapse = ', ')
+  result = result %>% str_replace_all(', ', ',')
+  result = result %>% str_replace_all(' ', '_')
 }
 
 f1 = function(col){
   x = col
-x = str_replace_all(x, '[\\[\\"\\]{}:]', '')
-y = str_extract_all(x, 'name [A-z]+')
+  x = str_replace_all(x, '[\\[\\"\\]{}:]', '')
+y = str_extract_all(x, 'name [A-z ]+')
+
 z = Map(f, y)
 z = as.character(z)
 return(z)
@@ -85,7 +84,11 @@ y = str_extract_all(x, '[A-z0-9]+, name')
 y = Map(f, y)
 return(y %>% str_replace_all(', name', ''))
 }
+```
 
+
+
+```{r}
 movies$genres_id = f1_id(movies$genres)
 movies$keywords_id = f1_id(movies$keywords)
 movies$production_companies_id = f1_id(movies$production_companies)
@@ -236,6 +239,9 @@ sentiments_afinn = tidytext::get_sentiments("afinn") %>% dplyr::mutate(words = w
 
 ## Annalys keywords
 
+```{r}
+a = movies %>% unnest_tokens(words, keywords)
+```
 
 ### Frequency of keywords
 ```{r}
